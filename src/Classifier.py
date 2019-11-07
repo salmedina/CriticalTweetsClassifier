@@ -1,6 +1,5 @@
 import json
 import random
-import numpy as np
 import math
 import torch
 import torch.optim as optim
@@ -8,7 +7,8 @@ from BiLSTM_Classifier import BiLSTMEventType
 import torch.nn.functional as F
 import pdb
 
-torch.manual_seed(1)
+random.seed(1107)
+torch.manual_seed(1107)
 
 def setEmbeddings():
     file = '../data/glove.6B.100d.txt'
