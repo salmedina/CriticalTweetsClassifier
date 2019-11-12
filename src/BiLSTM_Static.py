@@ -4,25 +4,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pdb
 
+class BiLSTM_BERT(nn.Module):
 
-class BiLSTMEventType(nn.Module):
-
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, label_size, use_gpu, batch_size, number_layers, pretrained_embeds= None,
-                 frozen= False, dropout=0.5):
-        super(BiLSTMEventType, self).__init__()
+    def __init__(self, embedding_dim, hidden_dim, label_size, use_gpu, batch_size, number_layers, dropout=0.5):
+        super(BiLSTM_BERT, self).__init__()
         self.hidden_dim = hidden_dim
         self.use_gpu = use_gpu
         self.batch_size = batch_size
         self.dropout = dropout
         self.number_layers= number_layers
         self.label_size= label_size
-        self.embeddings = nn.Embedding(vocab_size, embedding_dim)
-        ####
-        if pretrained_embeds!= None:
-            self.embeddings.load_state_dict({'weight': pretrained_embeds})
-            if frozen:
-                self.embedding.weight.requires_grad = False
-        ###
         self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first= True)
         self.hidden2label = nn.Linear(hidden_dim*2, label_size)
         self.hidden = self.init_hidden()
@@ -38,12 +29,14 @@ class BiLSTMEventType(nn.Module):
 
 
 
-    def forward(self, sentence):
+    def forward(self, encoded_sentence):
         self.hidden = self.init_hidden()
-        x = self.embeddings(sentence).view(self.batch_size, sentence.shape[1], -1)
+        #x = self.embeddings(sentence).view(self.batch_size, sentence.shape[1], -1)
+        #TODO: override x with pretrained embedding. Make sure to bring it to appropriate dimensions to pass through the LSTM
+        x= encoded_sentence
+        ####
         lstm_out, self.hidden = self.lstm(x, self.hidden)
         y = self.hidden2label(lstm_out[:, -1, :])
-        #probs = F.softmax(y, dim=1)
         log_probs= F.log_softmax(y, dim=1)
         return log_probs
 
@@ -59,5 +52,3 @@ class BiLSTMEventType(nn.Module):
         y_pred = y_pred[range(y_pred.shape[0]), y] * mask
         ce_loss = -torch.sum(y_pred) / nb_tokens
         return  ce_loss
-
-
