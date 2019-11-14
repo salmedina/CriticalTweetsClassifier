@@ -5,6 +5,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_gpu', type=bool, default=False, help='Flag for using the GPU')
     parser.add_argument('--embedding_type', type=str, default='torch', help='Word embedding to be used: {torch, glove, bert}')
+    parser.add_argument('--event_type', type=str, default='',
+                        help='Determines the subset of dataset used for experiment.')
     parser.add_argument('--embedding_dim', type=str, default='300',
                         help='Word embedding dimension when using torch embeddings')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size used during training')
@@ -21,7 +23,7 @@ def parse_args():
 
 def main(args):
     #TODO: Implement the actual training and validation of the model
-    classifier.train_model(args.batch_size, int(args.embedding_dim), int(args.hidden_dim), args.embedding_type,
+    train_model(args.batch_size, int(args.embedding_dim), int(args.hidden_dim), args.embedding_type, args.event_type,
                            args.number_layers, args.num_epochs, args.use_gpu)
 
 
