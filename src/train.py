@@ -1,5 +1,5 @@
 import argparse
-from classifier import *
+from classifier import train_model
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -7,7 +7,7 @@ def parse_args():
     parser.add_argument('--embedding_type', type=str, default='torch', help='Word embedding to be used: {torch, glove, bert}')
     parser.add_argument('--event_type', type=str, default='',
                         help='Determines the subset of dataset used for experiment.')
-    parser.add_argument('--embedding_dim', type=str, default='300',
+    parser.add_argument('--embedding_dim', type=int, default='300',
                         help='Word embedding dimension when using torch embeddings')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size used during training')
     parser.add_argument('--hidden_dim', type=int, default=100, help='Hidden layer size')
@@ -22,9 +22,11 @@ def parse_args():
     return parser.parse_args()
 
 def main(args):
-    #TODO: Implement the actual training and validation of the model
-    train_model(args.batch_size, int(args.embedding_dim), int(args.hidden_dim), args.embedding_type, args.event_type,
-                           args.number_layers, args.num_epochs, args.use_gpu)
+    train_model(args.batch_size,
+                args.embedding_dim, args.hidden_dim,
+                args.embedding_type, args.event_type,
+                args.number_layers, args.num_epochs,
+                args.use_gpu)
 
 
 if __name__ == '__main__':

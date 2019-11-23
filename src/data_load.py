@@ -4,6 +4,7 @@ import random
 import json
 import pdb
 import math
+import numpy as np
 
 bert = BertEmbedding()
 
@@ -92,7 +93,8 @@ def load_data(embedding_type, event_type='', data_type= 'labeled'):
     train=[]
     val=[]
     print("Loading embeddings...")
-    embeddings = loadEmbeddings(set(ids), embedding_type=embedding_type, embedding_file= '../data/bert_embeddings.json')
+    embeddings = loadEmbeddings(set(ids), embedding_type=embedding_type, embedding_file= '../data/bert_embeddings.npy')
+
     print("Embeddings loaded...")
     for i in indices:
         if len(X[i])>0:
@@ -121,25 +123,8 @@ def loadEmbeddings(ids, embedding_type= 'torch', embedding_file= None):
         #embeddings['UNK'] = torch.zeros((len(vector)))
         embeddings['UNK'] = len(vector)*[0.0]
     elif embedding_type== 'bert':
-        #embeddings= BertEmbedding()
-        if embedding_file!= None:
-            #embeddings = BertEmbedding()
-            f = open(embedding_file)
-            #embeddings = json.load(f)
-            content= f.readlines()[0]
-            f.close()
-            lines = content.split(']], ')
-            for i in lines:
-                items = i.split(':')
-                if len(items) > 2:
-                    i = i[26:]
-                id, vector = i.split(':')
-                id = id.strip('"')
-                if id in ids:
-                    vector = vector + ']]'
-                    vector = vector.strip(' ')
-                    myVector = eval(vector)
-                    embeddings[id] = myVector
+        embeddings = np.load(embedding_file).item()
+
     return embeddings
 
 #saveBERT('../data/bert_embeddings.json')
