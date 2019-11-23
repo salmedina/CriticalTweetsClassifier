@@ -14,11 +14,6 @@ random.seed(1107)
 torch.manual_seed(1)
 
 
-
-#TODO: Figure out the BERT Encoding; currently using torch embeddings, use BERT frozen instead. Check resutls for both
-
-
-
 def maxCriterion(element):
     return len(element[0])
 
@@ -59,9 +54,8 @@ def batchify(data, batch_size, embedding_dim=1, randomize= True):
 def train_model(batch_size, embedding_dim, hidden_dim, embedding_type, event_type, number_layers=2, epochs=5, use_gpu=False):
     #embeddings={}
     print("Loading Data....")
-    train, val, events, vocab= loadData(embedding_type, event_type= event_type)
+    train, val, events, vocab= load_data(embedding_type, event_type= event_type)
     print('Training model...')
-    #TODO: override embedding dimension & pass the pretrained_embeds, if using GloVe/Bert
     if embedding_type== 'bert' or embedding_type== 'glove':
         embedding_dim= train[0][0].shape[1]
         val = batchify(val, batch_size, embedding_dim = embedding_dim, randomize=False)
@@ -85,7 +79,7 @@ def train_model(batch_size, embedding_dim, hidden_dim, embedding_type, event_typ
             train_i = batchify(train, batch_size)
         for x, y, seq_lengths in train_i:
             model.zero_grad()
-            y_pred = model(x)
+            y_pred = model(x, seq_lengths)
             #myLoss = loss_ce(y_pred, y, seq_lengths)
             myLoss = model.loss(y_pred, y, seq_lengths)
             total_Loss += myLoss.item()
@@ -116,7 +110,7 @@ def test(model, data, events):
     event_scores= {event: {'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for event in range(len(events))}
     for x, y, seq_lengths in data:
         total+= len(y)
-        y_pred = model(x)
+        y_pred = model(x, seq_lengths)
         y_pred_value= torch.argmax(y_pred, 1)
         vector=  y-y_pred_value
         correct+= (vector==0).sum().item()

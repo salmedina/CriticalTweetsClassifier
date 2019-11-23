@@ -37,16 +37,17 @@ class BiLSTMEventType(nn.Module):
         return (hidden1, hidden2)
 
 
-
-    def forward(self, sentence):
+    def forward(self, sentence, sentences_length):
         self.hidden = self.init_hidden()
         x = self.embeddings(sentence).view(self.batch_size, sentence.shape[1], -1)
-        lstm_out, self.hidden = self.lstm(x, self.hidden)
-        y = self.hidden2label(lstm_out[:, -1, :])
-        #probs = F.softmax(y, dim=1)
-        log_probs= F.log_softmax(y, dim=1)
+        embed_pack_pad = torch.nn.utils.rnn.pack_padded_sequence(x, sentences_length, batch_first=True)
+        lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
+        X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
+        X = X.contiguous()
+        y = self.hidden2label(X[:, -1, :])
+        # probs = F.softmax(y, dim=1)
+        log_probs = F.log_softmax(y, dim=1)
         return log_probs
-
 
     def loss(self, y_pred, y, sentences_length):
         y = y.view(-1)

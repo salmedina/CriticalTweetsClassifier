@@ -28,15 +28,17 @@ class BiLSTM_BERT(nn.Module):
         return (hidden1, hidden2)
 
 
-
-    def forward(self, encoded_sentence):
+    def forward(self, encoded_sentence, sentences_length):
         self.hidden = self.init_hidden()
         #x = self.embeddings(sentence).view(self.batch_size, sentence.shape[1], -1)
         #TODO: override x with pretrained embedding. Make sure to bring it to appropriate dimensions to pass through the LSTM
-        x= encoded_sentence
+        #x= encoded_sentence
+        embed_pack_pad = torch.nn.utils.rnn.pack_padded_sequence(encoded_sentence, sentences_length, batch_first=True)
         ####
-        lstm_out, self.hidden = self.lstm(x, self.hidden)
-        y = self.hidden2label(lstm_out[:, -1, :])
+        lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
+        X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
+        X = X.contiguous()
+        y = self.hidden2label(X[:, -1, :])
         log_probs= F.log_softmax(y, dim=1)
         return log_probs
 

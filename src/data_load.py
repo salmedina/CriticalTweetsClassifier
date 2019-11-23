@@ -63,7 +63,7 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
     return x_tensor
 
-def loadData(embedding_type, event_type='', data_type= 'labeled'):
+def load_data(embedding_type, event_type='', data_type= 'labeled'):
     if data_type== 'labeled': f=open('../data/labeled_data.json')
     else: f=open('../data/unlabeled_data.json')
     vocab={'<PAD>':0}
@@ -94,7 +94,6 @@ def loadData(embedding_type, event_type='', data_type= 'labeled'):
     print("Loading embeddings...")
     embeddings = loadEmbeddings(set(ids), embedding_type=embedding_type, embedding_file= '../data/bert_embeddings.json')
     print("Embeddings loaded...")
-    pdb.set_trace()
     for i in indices:
         if len(X[i])>0:
             x_i= encodeSentence(X[i], ids[i], embeddings, vocab, embedding_type)
