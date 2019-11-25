@@ -38,7 +38,9 @@ class BiLSTM_BERT(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        y = self.hidden2label(X[:, -1, :])
+        #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
+        y = self.hidden2label(X[:, 0, :])
+        ###
         log_probs= F.log_softmax(y, dim=1)
         return log_probs
 
@@ -48,9 +50,9 @@ class BiLSTM_BERT(nn.Module):
         y_pred= y_pred.view(-1, self.label_size)
         mask = (y > 0).float()
         nb_tokens = int(torch.sum(mask).item())
-        # yy= torch.zeros((self.batch_size, self.label_size))
-        # for i in range(self.batch_size): yy[i, y[i]]=1
-        # loss_ce = F.cross_entropy
         y_pred = y_pred[range(y_pred.shape[0]), y] * mask
         ce_loss = -torch.sum(y_pred) / nb_tokens
+        # nb_tokens= y.shape[0]
+        # loss = nn.CrossEntropyLoss()
+        # ce_loss = loss(y_pred, y) / nb_tokens
         return  ce_loss

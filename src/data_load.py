@@ -71,7 +71,7 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
     return x_tensor
 
-def loadData(embedding_type, event_type='', data_type= 'labeled'):
+def loadData(embedding_type, classifier_mode, event_type='', data_type= 'labeled'):
     if data_type== 'labeled': f=open('../data/labeled_data.json')
     else: f=open('../data/unlabeled_data.json')
     vocab={'<PAD>':0}
@@ -91,9 +91,9 @@ def loadData(embedding_type, event_type='', data_type= 'labeled'):
             Y_event.append(events[event])
             if data_type == 'labeled':
                 if data[id]['label']== 'low':
-                    Y_cr.append(0)
-                else:
                     Y_cr.append(1)
+                else:
+                    Y_cr.append(2)
     indices= [i for i in range(len(X))]
     random.shuffle(indices)
     split= math.ceil(len(X)*0.7)

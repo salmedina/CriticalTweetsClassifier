@@ -54,11 +54,13 @@ class BiLSTMEventType(nn.Module):
         y_pred= y_pred.view(-1, self.label_size)
         mask = (y > 0).float()
         nb_tokens = int(torch.sum(mask).item())
-        # yy= torch.zeros((self.batch_size, self.label_size))
-        # for i in range(self.batch_size): yy[i, y[i]]=1
-        # loss_ce = F.cross_entropy
         y_pred = y_pred[range(y_pred.shape[0]), y] * mask
         ce_loss = -torch.sum(y_pred) / nb_tokens
+        # nb_tokens= y.shape[0]
+        # loss = nn.CrossEntropyLoss()
+        # ce_loss = loss(y_pred, y) / nb_tokens
         return  ce_loss
+
+
 
 
