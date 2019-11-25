@@ -6,7 +6,7 @@ import pdb
 import math
 import numpy as np
 
-bert = BertEmbedding()
+bert = BertEmbedding(max_seq_length=50)
 
 #Need to run it if in a new dataset
 def saveBERT(embedding_file, data_file='../data/labeled_data.json'):
@@ -15,23 +15,30 @@ def saveBERT(embedding_file, data_file='../data/labeled_data.json'):
     sentences=[]
     ids=[]
     for id in data:
-        sentences.append(data[id]['text'])
-        ids.append(id)
+        text=data[id]['text']
+        if len(text)>0:
+            sentences.append(data[id]['text'])
+            ids.append(id)
     print("Data loaded...")
-    bert_encoding = bert(sentences)
+    #bert_encoding = bert(sentences)
     print("Data processed...")
     bert_embeddings={}
     #f = open(embedding_file, 'w')
-    for i in range(len(ids)):
-        id= ids[i]
-        bert_embed= bert_encoding[i][1]
-        x_tensor = torch.tensor(bert_embed, dtype=torch.float)
-        vector = x_tensor.tolist()
-        #f.write(id+'\t'+vector+'\n')
-        bert_embeddings[id]= vector
-    f= open(embedding_file, 'w')
-    json.dump(bert_embeddings, f)
-    f.close()
+    for i in range(0, len(ids),10):
+        bert_encoding = bert(sentences[i:i+10])
+        print(str(i)+'/'+str(len(ids)))
+        for j in range(10):
+            id= ids[i+j]
+            #bert_embed= bert(sentences[i])[0][1]
+            bert_embed= bert_encoding[j][1]
+            x_tensor = torch.tensor(bert_embed, dtype=torch.float)
+            vector = x_tensor.tolist()
+            #f.write(id+'\t'+vector+'\n')
+            bert_embeddings[id]= vector
+    # f= open(embedding_file, 'w')
+    # json.dump(bert_embeddings, f)
+    # f.close()
+    np.save(embedding_file, bert_embeddings)
 
 def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_vector=[]
@@ -64,7 +71,7 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
     return x_tensor
 
-def load_data(embedding_type, event_type='', data_type= 'labeled'):
+def loadData(embedding_type, event_type='', data_type= 'labeled'):
     if data_type== 'labeled': f=open('../data/labeled_data.json')
     else: f=open('../data/unlabeled_data.json')
     vocab={'<PAD>':0}
@@ -94,7 +101,6 @@ def load_data(embedding_type, event_type='', data_type= 'labeled'):
     val=[]
     print("Loading embeddings...")
     embeddings = loadEmbeddings(set(ids), embedding_type=embedding_type, embedding_file= '../data/bert_embeddings.npy')
-
     print("Embeddings loaded...")
     for i in indices:
         if len(X[i])>0:
@@ -124,7 +130,6 @@ def loadEmbeddings(ids, embedding_type= 'torch', embedding_file= None):
         embeddings['UNK'] = len(vector)*[0.0]
     elif embedding_type== 'bert':
         embeddings = np.load(embedding_file).item()
-
     return embeddings
 
-#saveBERT('../data/bert_embeddings.json')
+#saveBERT('../data/bert_embeddings.npy')

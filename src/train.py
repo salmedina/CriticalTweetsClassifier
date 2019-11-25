@@ -13,6 +13,8 @@ def parse_args():
     parser.add_argument('--hidden_dim', type=int, default=100, help='Hidden layer size')
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
     parser.add_argument('--num_epochs', type=int, default=30, help='Number of epochs for training the model')
+    parser.add_argument('--class_mode', type=int, default='criticality', help='Classification task: either criticality'
+                                                                              'or event_type')
     parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=0.03, help='Training weight decay')
     parser.add_argument('--data_path', type=str, help='Path to the json file to use for classification')

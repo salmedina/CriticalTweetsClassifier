@@ -18,7 +18,7 @@ def maxCriterion(element):
     return len(element[0])
 
 
-def batchify(data, batch_size, embedding_dim=1, randomize= True):
+def batchify(data, batch_size, class_mode, embedding_dim=1, randomize= True):
     data= data
     batches=[]
     num_batches= len(data) //batch_size
@@ -51,17 +51,17 @@ def batchify(data, batch_size, embedding_dim=1, randomize= True):
     return batches
 
 #TODO: Sanity-check/ does cuda work? Test it on some GPU
-def train_model(batch_size, embedding_dim, hidden_dim, embedding_type, event_type, number_layers=2, epochs=5, use_gpu=False):
+def train_model(batch_size, embedding_dim, hidden_dim, embedding_type, class_mode, event_type, number_layers=2, epochs=10, use_gpu=False):
     #embeddings={}
     print("Loading Data....")
-    train, val, events, vocab= load_data(embedding_type, event_type= event_type)
+    train, val, events, vocab= loadData(embedding_type, event_type= event_type)
     print('Training model...')
     if embedding_type== 'bert' or embedding_type== 'glove':
         embedding_dim= train[0][0].shape[1]
-        val = batchify(val, batch_size, embedding_dim = embedding_dim, randomize=False)
+        val = batchify(val, batch_size, class_mode, embedding_dim = embedding_dim, randomize=False)
         model= BiLSTM_BERT(embedding_dim, hidden_dim, len(events), use_gpu, batch_size, number_layers)
     else:
-        val = batchify(val, batch_size, randomize=False)
+        val = batchify(val, batch_size, class_mode, randomize=False)
         model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(events), use_gpu, batch_size, number_layers)
     if use_gpu:
         model= model.cuda()
@@ -74,9 +74,9 @@ def train_model(batch_size, embedding_dim, hidden_dim, embedding_type, event_typ
         print(epoch)
         total_Loss = 0.
         if embedding_type== 'bert' or embedding_type== 'glove':
-            train_i = batchify(train, batch_size, embedding_dim= embedding_dim)
+            train_i = batchify(train, batch_size, class_mode, embedding_dim= embedding_dim)
         else:
-            train_i = batchify(train, batch_size)
+            train_i = batchify(train, batch_size, class_mode)
         for x, y, seq_lengths in train_i:
             model.zero_grad()
             y_pred = model(x, seq_lengths)
@@ -139,4 +139,4 @@ def test(model, data, events):
     macro_f1/=len(final_metrics)
     return accuracy, macro_f1, final_metrics
 
-train_model(16, 300, 100, 'bert', 'earthquake')
+train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
