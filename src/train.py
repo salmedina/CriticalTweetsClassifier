@@ -4,7 +4,7 @@ from classifier import train_model
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_gpu', type=bool, default=False, help='Flag for using the GPU')
-    parser.add_argument('--embedding_type', type=str, default='torch', help='Word embedding to be used: {torch, glove, bert}')
+    parser.add_argument('--embedding_type', type=str, default='bert', help='Word embedding to be used: {torch, glove, bert}')
     parser.add_argument('--event_type', type=str, default='earthquake',
                         help='Determines the subset of dataset used for experiment.')
     parser.add_argument('--embedding_dim', type=int, default=300,
@@ -22,7 +22,24 @@ def parse_args():
                         help='Path to the directory where output will be saved')
     return parser.parse_args()
 
+
+def print_train_params(args):
+    print(f'''=== Training Params ==========================================
+Event Type:     {args.event_type}
+Embedding Type: {args.embedding_type}
+Embedding Dim:  {args.embedding_dim}
+Hidden Dim:     {args.hidden_dim}
+Task:           {args.task}
+Num Layers:     {args.num_layers}
+Batch Size:     {args.batch_size}
+Learning Rate:  {args.lr}
+Weight Decay:   {args.wd}
+Use GPU:        {args.use_gpu}
+==============================================================''')
+
+
 def main(args):
+    print_train_params(args)
     train_model(args.batch_size,
                 args.embedding_dim, args.hidden_dim, args.embedding_type,
                 args.task, args.event_type,
