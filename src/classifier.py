@@ -111,8 +111,8 @@ def train_model(batch_size,
             print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
             if f1 < best_f1:
-                print('Early Convergence!!!!')
-                print(best_f1)
+                print('Early convergence. Training stopped.')
+                print(f'Best F1: {best_f1}')
                 break
             else:
                 best_f1 = f1
