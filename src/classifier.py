@@ -52,32 +52,33 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize= True
         batches.append((x_tensor, y_tensor, real_lengths))
     return batches
 
-#TODO: Sanity-check/ does cuda work? Test it on some GPU
+
 def train_model(batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
-                number_layers, epochs, use_gpu):
-    #embeddings={}
+                num_layers, epochs, use_gpu):
+
     print("Loading Data....")
     train, val, events, vocab= loadData(embedding_type, classifier_mode, event_type= event_type)
     if classifier_mode== 'criticality':
         labels= {'<PAD>':0, 'low':1, 'high':2}
     else:
         labels=events
+
     print('Training model...')
     if embedding_type== 'bert' or embedding_type== 'glove':
         embedding_dim= train[0][0].shape[1]
         val = batchify(val, batch_size, classifier_mode, embedding_dim = embedding_dim, randomize=False)
-        model= BiLSTM_BERT(embedding_dim, hidden_dim, len(labels), use_gpu, batch_size, number_layers)
+        model= BiLSTM_BERT(embedding_dim, hidden_dim, len(labels), use_gpu, batch_size, num_layers)
     else:
         val = batchify(val, batch_size, classifier_mode, randomize=False)
-        model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels), use_gpu, batch_size, number_layers)
+        model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels), use_gpu, batch_size, num_layers)
     if use_gpu:
         model= model.cuda()
-    #optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
+
     optimizer = optim.SGD(model.parameters(), lr=0.03, weight_decay=1e-4)
-    #model.train()
-    best_f1= 0.0
+
+    best_f1 = 0.0
     for epoch in range(epochs):
         print('Epoch Number:')
         print(epoch)
