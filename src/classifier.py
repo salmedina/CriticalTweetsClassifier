@@ -19,33 +19,30 @@ def maxCriterion(element):
 
 
 def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize= True):
-    data= data
-    batches=[]
-    num_batches= len(data) //batch_size
-    leftover= len(data) - num_batches*batch_size
+    data = data
+    batches = list()
+    num_batches = len(data) // batch_size
+    leftover = len(data) - num_batches*batch_size
     if randomize:
         random.shuffle(data)
     else:
-        data=data+ data[:batch_size-leftover]
-        num_batches+=1
+        data = data + data[:batch_size-leftover]
+        num_batches += 1
     for b in range(num_batches):
-        # print('Batchifying')
-        # pdb.set_trace()
-        batch= data[b*batch_size:(b+1)*batch_size]
-        batch= sorted(batch, key= maxCriterion, reverse=True)
-        dim= batch[0][0].shape[0]
+        batch = data[b*batch_size:(b+1)*batch_size]
+        batch = sorted(batch, key= maxCriterion, reverse=True)
+        dim = batch[0][0].shape[0]
         real_lengths = [i[0].shape[0] for i in batch]
-        if embedding_dim==1:
-            x_tensor= torch.zeros((batch_size, dim, embedding_dim), dtype=torch.long)
+        if embedding_dim == 1:
+            x_tensor = torch.zeros((batch_size, dim, embedding_dim), dtype=torch.long)
         else:
             x_tensor = torch.zeros((batch_size, dim, embedding_dim), dtype=torch.float)
         y_tensor= torch.zeros((batch_size), dtype=torch.long)
         for i in range(batch_size):
-            x_i, y_i, y_cr= batch[i]
-            x_i= F.pad(x_i, (0, 0, 0, dim-x_i.shape[0]))
-            x_tensor[i]= x_i
-            #y_tensor[i] = y_i
-            if classifier_mode== 'criticality':
+            x_i, y_i, y_cr = batch[i]
+            x_i = F.pad(x_i, (0, 0, 0, dim-x_i.shape[0]))
+            x_tensor[i] = x_i
+            if classifier_mode == 'criticality':
                 y_tensor[i] = y_cr
             else:
                 y_tensor[i] = y_i
@@ -103,7 +100,7 @@ def train_model(batch_size,
             else:
                 accuracy, f1, final_metrics = test_event_type(model, train_i, events)
             print("Event Type ", event_type)
-            print(f"Train set - Loss: {total_loss}    Acc: {accuracy:05f}    F1: {f1:05f}")
+            print(f"Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
             print(final_metrics)
             if classifier_mode == 'criticality':
                 accuracy, f1, final_metrics = test_criticality(model, val, events)
@@ -125,7 +122,7 @@ def test_criticality(model, data, events):
     total = 0.0
     label_map = {1: 'low', 2: 'critical'}
     #event_scores= {event: {i:{'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for i in label_map}for event in range(len(events))}
-    criticality_scores= {i:{'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
+    criticality_scores= {i: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
         y_pred = model(x, seq_lengths)
@@ -146,7 +143,7 @@ def test_criticality(model, data, events):
     re_low = criticality_scores[1]['correct'] / criticality_scores[1]['gold']
     f1_low = (2 * pr_low * re_low) / (pr_low + re_low + 0.0001)
     accuracy = correct / total
-    macro_f1 = (f1_cr+f1_low)/ 2
+    macro_f1 = (f1_cr+f1_low) / 2
     final_metrics = {'low': (pr_low, re_low, f1_low), 'critical': (pr_cr, re_cr, f1_cr)}
     return accuracy, macro_f1, final_metrics
 
