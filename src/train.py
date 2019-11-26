@@ -5,7 +5,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_gpu', type=bool, default=False, help='Flag for using the GPU')
     parser.add_argument('--embedding_type', type=str, default='torch', help='Word embedding to be used: {torch, glove, bert}')
-    parser.add_argument('--event_type', type=str, default='',
+    parser.add_argument('--event_type', type=str, default='earthquake',
                         help='Determines the subset of dataset used for experiment.')
     parser.add_argument('--embedding_dim', type=int, default='300',
                         help='Word embedding dimension when using torch embeddings')

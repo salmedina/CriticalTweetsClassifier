@@ -59,14 +59,14 @@ def train_model(batch_size,
                 num_layers, epochs, use_gpu):
 
     print("Loading Data....")
-    train, val, events, vocab= loadData(embedding_type, classifier_mode, event_type= event_type)
+    train, val, events, vocab = loadData(embedding_type, classifier_mode, event_type=event_type)
     if classifier_mode== 'criticality':
         labels= {'<PAD>':0, 'low':1, 'high':2}
     else:
         labels=events
 
     print('Training model...')
-    if embedding_type== 'bert' or embedding_type== 'glove':
+    if embedding_type == 'bert' or embedding_type == 'glove':
         embedding_dim= train[0][0].shape[1]
         val = batchify(val, batch_size, classifier_mode, embedding_dim = embedding_dim, randomize=False)
         model= BiLSTM_BERT(embedding_dim, hidden_dim, len(labels), use_gpu, batch_size, num_layers)
@@ -80,37 +80,36 @@ def train_model(batch_size,
 
     best_f1 = 0.0
     for epoch in range(epochs):
-        print('Epoch Number:')
-        print(epoch)
+        print()
+        print(f'======== Epoch Number: {epoch}')
         total_loss = 0.
-        if embedding_type== 'bert' or embedding_type== 'glove':
+        if embedding_type == 'bert' or embedding_type == 'glove':
             train_i = batchify(train, batch_size, classifier_mode, embedding_dim= embedding_dim)
         else:
             train_i = batchify(train, batch_size, classifier_mode)
         for x, y, seq_lengths in train_i:
             model.zero_grad()
             y_pred = model(x, seq_lengths)
-            #myLoss = loss_ce(y_pred, y, seq_lengths)
             loss = model.loss(y_pred, y, seq_lengths)
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
             del loss
+
+        # Validate the model
         with torch.no_grad():
-            print("Loss: Train set ", total_loss)
-            if classifier_mode== 'criticality':
+            if classifier_mode == 'criticality':
                 accuracy, f1, final_metrics = test_criticality(model, train_i, events)
             else:
                 accuracy, f1, final_metrics = test_event_type(model, train_i, events)
             print("Event Type ", event_type)
-            print("Accuracy & F1: Train set ", accuracy, f1)
+            print(f"Train set - Loss: {total_loss}    Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
-            # self.test(model, train_i)
             if classifier_mode == 'criticality':
                 accuracy, f1, final_metrics = test_criticality(model, val, events)
             else:
                 accuracy, f1, final_metrics = test_event_type(model, val, events)
-            print("Accuracy & F1 on Dev set ", accuracy, f1)
+            print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
             if f1 < best_f1:
                 print('Early Convergence!!!!')
@@ -118,6 +117,7 @@ def train_model(batch_size,
                 break
             else:
                 best_f1 = f1
+
     return model
 
 def test_criticality(model, data, events):
@@ -125,21 +125,21 @@ def test_criticality(model, data, events):
     total=0.0
     label_map = {1: 'low', 2: 'critical'}
     #event_scores= {event: {i:{'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for i in label_map}for event in range(len(events))}
-    criticality_scores= {i:{'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for i in label_map}
+    criticality_scores= {i:{'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
     for x, y, seq_lengths in data:
-        total+= len(y)
+        total += len(y)
         y_pred = model(x, seq_lengths)
-        y_pred_value= torch.argmax(y_pred, 1)
-        vector=  y-y_pred_value
-        correct+= (vector==0).sum().item()
+        y_pred_value = torch.argmax(y_pred, 1)
+        vector = y-y_pred_value
+        correct += (vector == 0).sum().item()
         for i in range(len(y)):
-            actual= y[i].item()
-            pred= y_pred_value[i].item()
+            actual = y[i].item()
+            pred = y_pred_value[i].item()
             criticality_scores[actual]['gold'] += 1
             criticality_scores[pred]['predicted'] += 1
-            if actual==pred:
-                criticality_scores[actual]['correct']+=1
-    pr_cr= criticality_scores[2]['correct'] / criticality_scores[2]['predicted']
+            if actual == pred:
+                criticality_scores[actual]['correct'] += 1
+    pr_cr = criticality_scores[2]['correct'] / criticality_scores[2]['predicted']
     re_cr = criticality_scores[2]['correct'] / criticality_scores[2]['gold']
     f1_cr = (2*pr_cr*re_cr)/(pr_cr+re_cr+0.0001)
     pr_low = criticality_scores[1]['correct'] / criticality_scores[1]['predicted']
@@ -154,36 +154,36 @@ def test_criticality(model, data, events):
 def test_event_type(model, data, events):
     correct=0.0
     total=0.0
-    event_scores= {event: {'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for event in range(len(events))}
+    event_scores = {event: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for event in range(len(events))}
     for x, y, seq_lengths in data:
-        total+= len(y)
+        total += len(y)
         y_pred = model(x, seq_lengths)
-        y_pred_value= torch.argmax(y_pred, 1)
-        vector=  y-y_pred_value
-        correct+= (vector==0).sum().item()
+        y_pred_value = torch.argmax(y_pred, 1)
+        vector = y-y_pred_value
+        correct += (vector == 0).sum().item()
         for i in range(len(y)):
-            actual= y[i].item()
-            pred= y_pred_value[i].item()
+            actual = y[i].item()
+            pred = y_pred_value[i].item()
             event_scores[actual]['gold'] += 1
             event_scores[pred]['predicted'] += 1
-            if actual==pred:
-                event_scores[actual]['correct']+=1
+            if actual == pred:
+                event_scores[actual]['correct'] += 1
     final_metrics= {}
     macro_f1=0.0
     for event_id in event_scores:
         for e, v in events.items():
-            if v== event_id:
-                event= e
-        pr= event_scores[event_id]['correct']/event_scores[event_id]['predicted']
+            if v == event_id:
+                event = e
+        pr = event_scores[event_id]['correct']/event_scores[event_id]['predicted']
         re = event_scores[event_id]['correct'] / event_scores[event_id]['gold']
-        f1= (2*pr*re)/(pr+re+0.0001)
-        if event_id!=0:
-            final_metrics[event]= (pr, re, f1)
-            macro_f1+= f1
+        f1 = (2*pr*re)/(pr+re+0.0001)
+        if event_id != 0:
+            final_metrics[event] = (pr, re, f1)
+            macro_f1 += f1
     accuracy= correct/total
     # print('event Scores')
     # print(event_scores)
-    macro_f1/=len(final_metrics)
+    macro_f1 /= len(final_metrics)
     return accuracy, macro_f1, final_metrics
 
 #train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
