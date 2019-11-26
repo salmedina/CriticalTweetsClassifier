@@ -53,7 +53,10 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize= True
     return batches
 
 #TODO: Sanity-check/ does cuda work? Test it on some GPU
-def train_model(batch_size, embedding_dim, hidden_dim, embedding_type, classifier_mode, event_type, number_layers=2, epochs=5, use_gpu=False):
+def train_model(batch_size,
+                embedding_dim, hidden_dim, embedding_type,
+                classifier_mode, event_type,
+                number_layers, epochs, use_gpu):
     #embeddings={}
     print("Loading Data....")
     train, val, events, vocab= loadData(embedding_type, classifier_mode, event_type= event_type)
@@ -182,5 +185,5 @@ def test_event_type(model, data, events):
     macro_f1/=len(final_metrics)
     return accuracy, macro_f1, final_metrics
 
-train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
+#train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
 #train_model(16, 300, 100, 'bert', 'event', 'earthquake')

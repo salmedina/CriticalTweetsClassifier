@@ -12,9 +12,8 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size used during training')
     parser.add_argument('--hidden_dim', type=int, default=100, help='Hidden layer size')
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
-    parser.add_argument('--num_epochs', type=int, default=30, help='Number of epochs for training the model')
-    parser.add_argument('--class_mode', type=int, default='criticality', help='Classification task: either criticality'
-                                                                              'or event_type')
+    parser.add_argument('--num_epochs', type=int, default=5, help='Number of epochs for training the model')
+    parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type}')
     parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=0.03, help='Training weight decay')
     parser.add_argument('--data_path', type=str, help='Path to the json file to use for classification')
@@ -25,11 +24,9 @@ def parse_args():
 
 def main(args):
     train_model(args.batch_size,
-                args.embedding_dim, args.hidden_dim,
-                args.embedding_type, args.event_type,
-                args.number_layers, args.num_epochs,
-                args.use_gpu)
-
+                args.embedding_dim, args.hidden_dim, args.embedding_type,
+                args.task, args.event_type,
+                args.num_layers, args.num_epochs, args.use_gpu)
 
 if __name__ == '__main__':
     args = parse_args()
