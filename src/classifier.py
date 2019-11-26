@@ -58,9 +58,9 @@ def train_model(batch_size,
     print("Loading Data....")
     train, val, events, vocab = loadData(embedding_type, classifier_mode, event_type=event_type)
     if classifier_mode== 'criticality':
-        labels= {'<PAD>':0, 'low':1, 'high':2}
+        labels = {'<PAD>': 0, 'low': 1, 'high': 2}
     else:
-        labels=events
+        labels = events
 
     print('Training model...')
     if embedding_type == 'bert' or embedding_type == 'glove':
