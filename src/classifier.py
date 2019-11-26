@@ -7,7 +7,7 @@ from BiLSTM_Classifier import BiLSTMEventType
 from BiLSTM_Static import BiLSTM_BERT
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
-from data_load import *
+from data_load import loadData
 import pdb
 
 random.seed(1107)
@@ -57,21 +57,21 @@ def train_model(batch_size,
 
     print("Loading Data....")
     train, val, events, vocab = loadData(embedding_type, classifier_mode, event_type=event_type)
-    if classifier_mode== 'criticality':
+    if classifier_mode == 'criticality':
         labels = {'<PAD>': 0, 'low': 1, 'high': 2}
     else:
         labels = events
 
     print('Training model...')
     if embedding_type == 'bert' or embedding_type == 'glove':
-        embedding_dim= train[0][0].shape[1]
-        val = batchify(val, batch_size, classifier_mode, embedding_dim = embedding_dim, randomize=False)
-        model= BiLSTM_BERT(embedding_dim, hidden_dim, len(labels), use_gpu, batch_size, num_layers)
+        embedding_dim = train[0][0].shape[1]
+        val = batchify(val, batch_size, classifier_mode, embedding_dim=embedding_dim, randomize=False)
+        model = BiLSTM_BERT(embedding_dim, hidden_dim, len(labels), use_gpu, batch_size, num_layers)
     else:
         val = batchify(val, batch_size, classifier_mode, randomize=False)
         model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels), use_gpu, batch_size, num_layers)
     if use_gpu:
-        model= model.cuda()
+        model = model.cuda()
 
     optimizer = optim.SGD(model.parameters(), lr=0.03, weight_decay=1e-4)
 
