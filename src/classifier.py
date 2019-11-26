@@ -80,7 +80,7 @@ def train_model(batch_size,
 
     best_f1 = 0.0
     for epoch in range(epochs):
-        print()
+        print('')
         print(f'======== Epoch Number: {epoch}')
         total_loss = 0.
         if embedding_type == 'bert' or embedding_type == 'glove':
@@ -121,8 +121,8 @@ def train_model(batch_size,
     return model
 
 def test_criticality(model, data, events):
-    correct=0.0
-    total=0.0
+    correct = 0.0
+    total = 0.0
     label_map = {1: 'low', 2: 'critical'}
     #event_scores= {event: {i:{'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for i in label_map}for event in range(len(events))}
     criticality_scores= {i:{'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
@@ -152,8 +152,8 @@ def test_criticality(model, data, events):
 
 
 def test_event_type(model, data, events):
-    correct=0.0
-    total=0.0
+    correct = 0.0
+    total = 0.0
     event_scores = {event: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for event in range(len(events))}
     for x, y, seq_lengths in data:
         total += len(y)
