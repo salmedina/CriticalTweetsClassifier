@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
     parser.add_argument('--num_epochs', type=int, default=5, help='Number of epochs for training the model')
     parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type}')
-    parser.add_argument('--lr', type=float, default=1e-4, help='Training learning rate')
+    parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Training weight decay')
     parser.add_argument('--data_path', type=str, help='Path to the json file to use for classification')
     parser.add_argument('--valid_freq', type=int, help='Number of epochs when the validation will be run')
@@ -26,7 +26,8 @@ def main(args):
     train_model(args.batch_size,
                 args.embedding_dim, args.hidden_dim, args.embedding_type,
                 args.task, args.event_type,
-                args.num_layers, args.num_epochs, args.use_gpu)
+                args.num_layers, args.num_epochs, args.lr, args.wd,
+                args.use_gpu)
 
 if __name__ == '__main__':
     args = parse_args()

@@ -53,7 +53,8 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize= True
 def train_model(batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
-                num_layers, epochs, use_gpu):
+                num_layers, epochs, learning_rate, weight_decay,
+                use_gpu):
 
     print("Loading Data....")
     train, val, events, vocab = loadData(embedding_type, classifier_mode, event_type=event_type)
@@ -70,10 +71,11 @@ def train_model(batch_size,
     else:
         val = batchify(val, batch_size, classifier_mode, randomize=False)
         model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels), use_gpu, batch_size, num_layers)
+
     if use_gpu:
         model = model.cuda()
 
-    optimizer = optim.SGD(model.parameters(), lr=0.03, weight_decay=1e-4)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     best_f1 = 0.0
     for epoch in range(epochs):
