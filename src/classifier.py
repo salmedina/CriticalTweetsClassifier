@@ -4,7 +4,7 @@ import math
 import torch
 import torch.optim as optim
 from BiLSTM_Classifier import BiLSTMEventType
-from BiLSTM_Static import BiLSTM_BERT
+from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
 from data_load import loadData
@@ -18,7 +18,7 @@ def maxCriterion(element):
     return len(element[0])
 
 
-def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize= True):
+def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True):
     data = data
     batches = list()
     num_batches = len(data) // batch_size
@@ -37,17 +37,100 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize= True
             x_tensor = torch.zeros((batch_size, dim, embedding_dim), dtype=torch.long)
         else:
             x_tensor = torch.zeros((batch_size, dim, embedding_dim), dtype=torch.float)
-        y_tensor= torch.zeros((batch_size), dtype=torch.long)
+
+        y_event_tensor = torch.zeros((batch_size), dtype=torch.long)
+        y_crit_tensor = torch.zeros((batch_size), dtype=torch.long)
         for i in range(batch_size):
             x_i, y_i, y_cr = batch[i]
             x_i = F.pad(x_i, (0, 0, 0, dim-x_i.shape[0]))
             x_tensor[i] = x_i
-            if classifier_mode == 'criticality':
-                y_tensor[i] = y_cr
-            else:
-                y_tensor[i] = y_i
-        batches.append((x_tensor, y_tensor, real_lengths))
+            y_event_tensor[i] = y_i
+            y_crit_tensor[i] = y_cr
+
+        if classifier_mode == 'criticality':
+            batches.append((x_tensor, y_crit_tensor, real_lengths))
+        elif classifier_mode == 'event_type':
+            batches.append((x_tensor, y_event_tensor, real_lengths))
+        elif classifier_mode == 'multi_task':
+            batches.append((x_tensor, y_event_tensor, y_crit_tensor, real_lengths))
+        else:
+            batches = None
+
     return batches
+
+
+def train_multitask(batch_size,
+                embedding_dim, hidden_dim, embedding_type,
+                classifier_mode, event_type,
+                num_layers, epochs, learning_rate, weight_decay,
+                use_gpu):
+
+    print("Loading Data....")
+    train, val, events, vocab = loadData(embedding_type,
+                                         classifier_mode='multi_task',
+                                         event_type=event_type)
+    event_labels = events
+    crit_labels = {'<PAD>': 0, 'low': 1, 'high': 2}
+
+    print('Training multitask model...')
+    if embedding_type == 'bert' or embedding_type == 'glove':
+        embedding_dim = train[0][0].shape[1]
+        val = batchify(val, batch_size, classifier_mode, embedding_dim=embedding_dim, randomize=False)
+        model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
+                            event_output_size=len(event_labels), crit_output_size=len(crit_labels),
+                            use_gpu=use_gpu, batch_size=batch_size)
+    else:
+        print('Multi-task model only works with pre-trained embeddings')
+        return
+
+    if use_gpu:
+        model = model.cuda()
+
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    best_f1 = 0.0
+    for epoch in range(epochs):
+        print('')
+        print(f'======== Epoch Number: {epoch}')
+        total_loss = 0.
+        train_batch = batchify(train, batch_size, classifier_mode, embedding_dim=embedding_dim)
+
+        for x, y_event, y_crit, seq_lengths in train_batch:
+            model.zero_grad()
+            y_pred = model(x, seq_lengths)
+            loss_event = model.loss(y_pred, y_event, seq_lengths)
+            loss_crit = model.loss(y_pred, y_crit, seq_lengths)
+            loss = loss_event + loss_crit
+            total_loss += loss.item()
+            loss.backward()
+            optimizer.step()
+            del loss
+            del loss_crit
+            del loss_event
+
+        # Validate the model
+        with torch.no_grad():
+            if classifier_mode == 'criticality':
+                accuracy, f1, final_metrics = test_criticality(model, train_batch, events)
+            else:
+                accuracy, f1, final_metrics = test_event_type(model, train_batch, events)
+            print("Event Type ", event_type)
+            print(f"Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
+            print(final_metrics)
+            if classifier_mode == 'criticality':
+                accuracy, f1, final_metrics = test_criticality(model, val, events)
+            else:
+                accuracy, f1, final_metrics = test_event_type(model, val, events)
+            print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
+            print(final_metrics)
+            if f1 < best_f1:
+                print('Early convergence. Training stopped.')
+                print(f'Best F1: {best_f1}')
+                break
+            else:
+                best_f1 = f1
+
+    return model
 
 
 def train_model(batch_size,
@@ -57,7 +140,7 @@ def train_model(batch_size,
                 use_gpu):
 
     print("Loading Data....")
-    train, val, events, vocab = loadData(embedding_type, classifier_mode, event_type=event_type)
+    train, val, events, vocab = loadData(embedding_type, event_type=event_type)
     if classifier_mode == 'criticality':
         labels = {'<PAD>': 0, 'low': 1, 'high': 2}
     else:
@@ -118,6 +201,7 @@ def train_model(batch_size,
                 best_f1 = f1
 
     return model
+
 
 def test_criticality(model, data, events):
     correct = 0.0
@@ -184,6 +268,11 @@ def test_event_type(model, data, events):
     # print(event_scores)
     macro_f1 /= len(final_metrics)
     return accuracy, macro_f1, final_metrics
+
+
+def test_multi_task(model, data, events):
+
+
 
 #train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
 #train_model(16, 300, 100, 'bert', 'event', 'earthquake')
