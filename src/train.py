@@ -1,5 +1,5 @@
 import argparse
-from classifier import train_model
+from classifier import train_model, train_multitask
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -29,7 +29,7 @@ Event Type:     {args.event_type}
 Embedding Type: {args.embedding_type}
 Embedding Dim:  {args.embedding_dim}
 Hidden Dim:     {args.hidden_dim}
-Task:           {args.task}
+Mode:           {args.task}
 Num Layers:     {args.num_layers}
 Batch Size:     {args.batch_size}
 Learning Rate:  {args.lr}
@@ -40,11 +40,16 @@ Use GPU:        {args.use_gpu}
 
 def main(args):
     print_train_params(args)
-    train_model(args.batch_size,
-                args.embedding_dim, args.hidden_dim, args.embedding_type,
-                args.task, args.event_type,
-                args.num_layers, args.num_epochs, args.lr, args.wd,
-                args.use_gpu)
+    if args.task == 'multi_task':
+        train_multitask(args.batch_size, args.hidden_dim, args.embedding_type, args.event_type,
+                    args.num_layers, args.num_epochs, args.lr, args.wd,
+                    args.use_gpu)
+    else:
+        train_model(args.batch_size,
+                    args.embedding_dim, args.hidden_dim, args.embedding_type,
+                    args.task, args.event_type,
+                    args.num_layers, args.num_epochs, args.lr, args.wd,
+                    args.use_gpu)
 
 if __name__ == '__main__':
     args = parse_args()
