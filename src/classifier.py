@@ -67,7 +67,7 @@ def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
     train_data, val_data, events, vocab = loadData(embedding_type,
                                          event_type=event_type)
     event_labels = events
-    crit_labels = {'<PAD>': 0, 'low': 1, 'high': 2}
+    crit_labels = {'low': 1, 'high': 2}
     event_label_size = len(event_labels)
     crit_label_size = len(crit_labels)
 
@@ -150,18 +150,18 @@ def train_model(batch_size,
     print("Loading Data....")
     train, val, events, vocab = loadData(embedding_type, event_type=event_type)
     if classifier_mode == 'criticality':
-        labels = {'<PAD>': 0, 'low': 1, 'high': 2}
+        labels_dict = {'<PAD>': 0, 'low': 1, 'high': 2}
     else:
-        labels = events
+        labels_dict = events
 
     print('Training model...')
     if embedding_type == 'bert' or embedding_type == 'glove':
         embedding_dim = train[0][0].shape[1]
         val = batchify(val, batch_size, classifier_mode, embedding_dim=embedding_dim, randomize=False)
-        model = BiLSTM_BERT(embedding_dim, hidden_dim, len(labels), use_gpu, batch_size, num_layers)
+        model = BiLSTM_BERT(embedding_dim, hidden_dim, len(labels_dict), use_gpu, batch_size, num_layers)
     else:
         val = batchify(val, batch_size, classifier_mode, randomize=False)
-        model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels), use_gpu, batch_size, num_layers)
+        model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels_dict), use_gpu, batch_size, num_layers)
 
     if use_gpu:
         model = model.cuda()
@@ -189,16 +189,16 @@ def train_model(batch_size,
         # Validate the model
         with torch.no_grad():
             if classifier_mode == 'criticality':
-                accuracy, f1, final_metrics = test_criticality(model, train_i, events)
+                accuracy, f1, final_metrics = test_criticality(model, train_i, labels_dict)
             else:
-                accuracy, f1, final_metrics = test_event_type(model, train_i, events)
+                accuracy, f1, final_metrics = test_event_type(model, train_i, labels_dict)
             print("Event Type ", event_type)
             print(f"Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
             print(final_metrics)
             if classifier_mode == 'criticality':
-                accuracy, f1, final_metrics = test_criticality(model, val, events)
+                accuracy, f1, final_metrics = test_criticality(model, val, labels_dict)
             else:
-                accuracy, f1, final_metrics = test_event_type(model, val, events)
+                accuracy, f1, final_metrics = test_event_type(model, val, labels_dict)
             print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
             if f1 < best_f1:
@@ -209,6 +209,10 @@ def train_model(batch_size,
                 best_f1 = f1
 
     return model
+
+
+def invert_dict(input_dict):
+    return {input_dict[key]: key for key in input_dict}
 
 
 def calc_metrics(scores, label_map):
@@ -227,15 +231,11 @@ def calc_metrics(scores, label_map):
     return macro_f1, final_metrics
 
 
-def invert_dict(input_dict):
-    return {input_dict[key]: key for key in input_dict}
-
-
-def test_criticality(model, data):
+def test_criticality(model, data, labels_dict):
     correct = 0.0
     total = 0.0
 
-    label_map = {1: 'low', 2: 'critical'}
+    label_map = invert_dict(labels_dict)
     scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
@@ -257,11 +257,11 @@ def test_criticality(model, data):
     return accuracy, macro_f1, final_metrics
 
 
-def test_event_type(model, data, events):
+def test_event_type(model, data, labels_dict):
     correct = 0.0
     total = 0.0
 
-    label_map = invert_dict(events)
+    label_map = invert_dict(labels_dict)
     scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:
         total += len(y)

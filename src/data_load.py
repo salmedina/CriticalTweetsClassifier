@@ -73,6 +73,7 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
     return x_tensor
 
+
 def loadData(embedding_type, event_type='', data_type= 'labeled'):
     data_path = '../data/labeled_data.json' if data_type == 'labeled' else '../data/unlabeled_data.json'
     f = open(data_path)
