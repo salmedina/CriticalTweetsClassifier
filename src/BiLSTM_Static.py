@@ -60,13 +60,12 @@ class BiLSTM_BERT(nn.Module):
 class BiLSTM_BERT_MultiTask(nn.Module):
 
     def __init__(self, embedding_dim, hidden_dim, num_layers, event_output_size, crit_output_size, use_gpu, batch_size, dropout=0.5):
-        super(BiLSTM_BERT, self).__init__()
+        super(BiLSTM_BERT_MultiTask, self).__init__()
         self.hidden_dim = hidden_dim
         self.use_gpu = use_gpu
         self.batch_size = batch_size
         self.dropout = dropout
         self.number_layers = num_layers
-        self.label_size = output_size
         self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first=True)
         self.hidden2event = nn.Linear(hidden_dim * 2, event_output_size)
         self.hidden2crit = nn.Linear(hidden_dim * 2, crit_output_size)
@@ -101,9 +100,9 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         log_probs_crit = F.log_softmax(y_crit, dim=1)
         return log_probs_event, log_probs_crit
 
-    def loss(self, y_pred, y, sentences_length):
+    def loss(self, y_pred, y, sentences_length, label_size):
         y = y.view(-1)
-        y_pred = y_pred.view(-1, self.label_size)
+        y_pred = y_pred.view(-1, label_size)
         mask = (y > 0).float()
         nb_tokens = int(torch.sum(mask).item())
         y_pred = y_pred[range(y_pred.shape[0]), y] * mask
