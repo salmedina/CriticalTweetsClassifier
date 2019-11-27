@@ -214,34 +214,35 @@ def train_model(batch_size,
 def test_criticality(model, data, events):
     correct = 0.0
     total = 0.0
+
     label_map = {1: 'low', 2: 'critical'}
-    #event_scores= {event: {i:{'correct':0.0, 'gold':0.0001, 'predicted':0.0001} for i in label_map}for event in range(len(events))}
-    criticality_scores= {i: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
+    scores = {i: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
         y_pred = model(x, seq_lengths)
         y_pred_value = torch.argmax(y_pred, 1)
-        vector = y-y_pred_value
-        correct += (vector == 0).sum().item()
+        diff_vector = y - y_pred_value
+        correct += (diff_vector == 0).sum().item()
         for i in range(len(y)):
             actual = y[i].item()
             pred = y_pred_value[i].item()
-            criticality_scores[actual]['gold'] += 1
-            criticality_scores[pred]['predicted'] += 1
+            scores[actual]['gold'] += 1
+            scores[pred]['predicted'] += 1
             if actual == pred:
-                criticality_scores[actual]['correct'] += 1
+                scores[actual]['correct'] += 1
 
-    pr_low = criticality_scores[1]['correct'] / criticality_scores[1]['predicted']
-    re_low = criticality_scores[1]['correct'] / criticality_scores[1]['gold']
-    f1_low = (2 * pr_low * re_low) / (pr_low + re_low + 0.0001)
-
-    pr_cr = criticality_scores[2]['correct'] / criticality_scores[2]['predicted']
-    re_cr = criticality_scores[2]['correct'] / criticality_scores[2]['gold']
-    f1_cr = (2*pr_cr*re_cr)/(pr_cr+re_cr+0.0001)
+    final_metrics = {}
+    macro_f1 = 0.0
+    for label_idx in scores:
+        precision = scores[label_idx]['correct'] / scores[label_idx]['predicted']
+        recall = scores[label_idx]['correct'] / scores[label_idx]['gold']
+        f1 = (2 * precision * recall) / (precision + recall + 1e-4)
+        label = label_map[label_idx]
+        final_metrics[label] = (precision, recall, f1)
+        macro_f1 += f1
 
     accuracy = correct / total
-    macro_f1 = (f1_cr+f1_low) / 2
-    final_metrics = {'low': (pr_low, re_low, f1_low), 'critical': (pr_cr, re_cr, f1_cr)}
+    macro_f1 /= len(final_metrics)
 
     return accuracy, macro_f1, final_metrics
 
@@ -249,7 +250,7 @@ def test_criticality(model, data, events):
 def test_event_type(model, data, events):
     correct = 0.0
     total = 0.0
-    event_scores = {event: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for event in range(len(events))}
+    scores = {event: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for event in range(len(events))}
     for x, y, seq_lengths in data:
         total += len(y)
         y_pred = model(x, seq_lengths)
@@ -259,18 +260,18 @@ def test_event_type(model, data, events):
         for i in range(len(y)):
             actual = y[i].item()
             pred = y_pred_value[i].item()
-            event_scores[actual]['gold'] += 1
-            event_scores[pred]['predicted'] += 1
+            scores[actual]['gold'] += 1
+            scores[pred]['predicted'] += 1
             if actual == pred:
-                event_scores[actual]['correct'] += 1
-    final_metrics= {}
+                scores[actual]['correct'] += 1
+    final_metrics = {}
     macro_f1 = 0.0
-    for event_id in event_scores:
+    for event_id in scores:
         for e, v in events.items():
             if v == event_id:
                 event = e
-        pr = event_scores[event_id]['correct']/event_scores[event_id]['predicted']
-        re = event_scores[event_id]['correct'] / event_scores[event_id]['gold']
+        pr = scores[event_id]['correct']/scores[event_id]['predicted']
+        re = scores[event_id]['correct'] / scores[event_id]['gold']
         f1 = (2*pr*re)/(pr+re+0.0001)
         if event_id != 0:
             final_metrics[event] = (pr, re, f1)
