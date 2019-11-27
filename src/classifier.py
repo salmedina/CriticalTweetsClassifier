@@ -211,12 +211,32 @@ def train_model(batch_size,
     return model
 
 
-def test_criticality(model, data, events):
+def calc_metrics(scores, label_map):
+    final_metrics = {}
+    macro_f1 = 0.0
+    for label_idx in scores:
+        precision = scores[label_idx]['correct'] / scores[label_idx]['predicted']
+        recall = scores[label_idx]['correct'] / scores[label_idx]['gold']
+        f1 = (2 * precision * recall) / (precision + recall + 1e-4)
+        label = label_map[label_idx]
+        final_metrics[label] = (precision, recall, f1)
+        macro_f1 += f1
+
+    macro_f1 /= len(final_metrics)
+
+    return macro_f1, final_metrics
+
+
+def invert_dict(input_dict):
+    return {input_dict[key]: key for key in input_dict}
+
+
+def test_criticality(model, data):
     correct = 0.0
     total = 0.0
 
     label_map = {1: 'low', 2: 'critical'}
-    scores = {i: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for i in label_map}
+    scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
         y_pred = model(x, seq_lengths)
@@ -231,18 +251,8 @@ def test_criticality(model, data, events):
             if actual == pred:
                 scores[actual]['correct'] += 1
 
-    final_metrics = {}
-    macro_f1 = 0.0
-    for label_idx in scores:
-        precision = scores[label_idx]['correct'] / scores[label_idx]['predicted']
-        recall = scores[label_idx]['correct'] / scores[label_idx]['gold']
-        f1 = (2 * precision * recall) / (precision + recall + 1e-4)
-        label = label_map[label_idx]
-        final_metrics[label] = (precision, recall, f1)
-        macro_f1 += f1
-
     accuracy = correct / total
-    macro_f1 /= len(final_metrics)
+    macro_f1, final_metrics = calc_metrics(scores=scores, label_map=label_map)
 
     return accuracy, macro_f1, final_metrics
 
@@ -250,7 +260,9 @@ def test_criticality(model, data, events):
 def test_event_type(model, data, events):
     correct = 0.0
     total = 0.0
-    scores = {event: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for event in range(len(events))}
+
+    label_map = invert_dict(events)
+    scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
         y_pred = model(x, seq_lengths)
@@ -264,20 +276,9 @@ def test_event_type(model, data, events):
             scores[pred]['predicted'] += 1
             if actual == pred:
                 scores[actual]['correct'] += 1
-    final_metrics = {}
-    macro_f1 = 0.0
-    for event_id in scores:
-        for e, v in events.items():
-            if v == event_id:
-                event = e
-        pr = scores[event_id]['correct']/scores[event_id]['predicted']
-        re = scores[event_id]['correct'] / scores[event_id]['gold']
-        f1 = (2*pr*re)/(pr+re+0.0001)
-        if event_id != 0:
-            final_metrics[event] = (pr, re, f1)
-            macro_f1 += f1
-    accuracy = correct/total
-    macro_f1 /= len(final_metrics)
+
+    accuracy = correct / total
+    macro_f1, final_metrics = calc_metrics(scores=scores, label_map=label_map)
 
     return accuracy, macro_f1, final_metrics
 
