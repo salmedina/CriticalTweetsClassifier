@@ -177,6 +177,7 @@ def train_model(batch_size,
             train_i = batchify(train, batch_size, classifier_mode, embedding_dim= embedding_dim)
         else:
             train_i = batchify(train, batch_size, classifier_mode)
+
         for x, y, seq_lengths in train_i:
             model.zero_grad()
             y_pred = model(x, seq_lengths)
@@ -188,19 +189,15 @@ def train_model(batch_size,
 
         # Validate the model
         with torch.no_grad():
-            if classifier_mode == 'criticality':
-                accuracy, f1, final_metrics = test_criticality(model, train_i, labels_dict)
-            else:
-                accuracy, f1, final_metrics = test_event_type(model, train_i, labels_dict)
+            accuracy, f1, final_metrics = test_model(model, train_i, labels_dict)
             print("Event Type ", event_type)
             print(f"Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
             print(final_metrics)
-            if classifier_mode == 'criticality':
-                accuracy, f1, final_metrics = test_criticality(model, val, labels_dict)
-            else:
-                accuracy, f1, final_metrics = test_event_type(model, val, labels_dict)
+
+            accuracy, f1, final_metrics = test_model(model, val, labels_dict)
             print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
+
             if f1 < best_f1:
                 print('Early convergence. Training stopped.')
                 print(f'Best F1: {best_f1}')
@@ -231,7 +228,7 @@ def calc_metrics(scores, label_map):
     return macro_f1, final_metrics
 
 
-def test_criticality(model, data, labels_dict):
+def test_model(model, data, labels_dict):
     correct = 0.0
     total = 0.0
 
@@ -243,32 +240,6 @@ def test_criticality(model, data, labels_dict):
         y_pred_value = torch.argmax(y_pred, 1)
         diff_vector = y - y_pred_value
         correct += (diff_vector == 0).sum().item()
-        for i in range(len(y)):
-            actual = y[i].item()
-            pred = y_pred_value[i].item()
-            scores[actual]['gold'] += 1
-            scores[pred]['predicted'] += 1
-            if actual == pred:
-                scores[actual]['correct'] += 1
-
-    accuracy = correct / total
-    macro_f1, final_metrics = calc_metrics(scores=scores, label_map=label_map)
-
-    return accuracy, macro_f1, final_metrics
-
-
-def test_event_type(model, data, labels_dict):
-    correct = 0.0
-    total = 0.0
-
-    label_map = invert_dict(labels_dict)
-    scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
-    for x, y, seq_lengths in data:
-        total += len(y)
-        y_pred = model(x, seq_lengths)
-        y_pred_value = torch.argmax(y_pred, 1)
-        vector = y-y_pred_value
-        correct += (vector == 0).sum().item()
         for i in range(len(y)):
             actual = y[i].item()
             pred = y_pred_value[i].item()
