@@ -8,10 +8,11 @@ from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
 from data_load import loadData
+from easydict import EasyDict as edict
 import pdb
 
 random.seed(1107)
-torch.manual_seed(1)
+torch.manual_seed(1107)
 
 
 def maxCriterion(element):
@@ -60,26 +61,27 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
 
 
 def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
-                    num_layers, epochs, learning_rate, weight_decay,
+                    num_layers, epochs, learning_rate, weight_decay, early_stop,
                     use_gpu):
 
     print("Loading Data....")
     train_data, val_data, events, vocab = loadData(embedding_type,
                                          event_type=event_type)
     event_labels = events
-    crit_labels = {'low': 1, 'high': 2}
-    event_label_size = len(event_labels)
-    crit_label_size = len(crit_labels)
+    crit_labels = {'low': 0, 'high': 1}
+    event_output_size = len(event_labels)
+    crit_output_size = len(crit_labels)
 
     print('Training multitask model...')
     if embedding_type == 'bert' or embedding_type == 'glove':
         embedding_dim = train_data[0][0].shape[1]
         val_data = batchify(val_data, batch_size, classifier_mode='multi_task', embedding_dim=embedding_dim, randomize=False)
         model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
-                            event_output_size=event_label_size, crit_output_size=crit_label_size,
+                            event_output_size=event_output_size, crit_output_size=crit_output_size,
                             use_gpu=use_gpu, batch_size=batch_size)
     else:
-        print('Multi-task model only works with pre-trained embeddings')
+        #TODO: Implement multi-task learning for learning embeddings
+        print('ERROR: Multi-task model only works with pre-trained embeddings')
         return
 
     if use_gpu:
@@ -97,8 +99,8 @@ def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
         for x, y_event, y_crit, seq_lengths in train_batches:
             model.zero_grad()
             y_pred_event, y_pred_crit = model(x, seq_lengths)
-            loss_event = model.loss(y_pred_event, y_event, seq_lengths, event_label_size)
-            loss_crit = model.loss(y_pred_crit, y_crit, seq_lengths, crit_label_size)
+            loss_event = model.loss(y_pred_event, y_event, seq_lengths, event_output_size)
+            loss_crit = model.loss(y_pred_crit, y_crit, seq_lengths, crit_output_size)
             loss = loss_event + loss_crit
             total_loss += loss.item()
             loss.backward()
@@ -110,33 +112,31 @@ def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
         # Validate the model
         with torch.no_grad():
             # Test on training data
-            x, y_event, y_crit, seq_lengths = zip(*train_batches)
-            train_event_batches = zip(x, y_event, seq_lengths)
-            train_crit_batches = zip(x, y_crit, seq_lengths)
+            test_res = test_multitask(model=model, data=train_batches,
+                                      event_labels_dict=event_labels,
+                                      crit_labels_dict=crit_labels)
             print("Event Type ", event_type)
-            accuracy, f1, final_metrics = test_event_type(model, train_event_batches, events)
-            print(f"Event Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
-            print(final_metrics)
-            accuracy, f1, final_metrics = test_criticality(model, train_crit_batches, events)
-            print(f"Crit. Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
-            print(final_metrics)
+            print(f"Event Train set - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
+            print(test_res.event.final_metrics)
+            print(f"Crit. Train set - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
+            print(test_res.crit.final_metrics)
 
             # Test on validation data
-            x, y_event, y_crit, seq_lengths = zip(*val_data)
-            val_event_data = zip(x, y_event, seq_lengths)
-            val_crit_data = zip(x, y_crit, seq_lengths)
-            accuracy, f1, final_metrics = test_event_type(model, val_event_data, events)
-            print(f"Event Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
-            accuracy, f1, final_metrics = test_criticality(model, val_crit_data, events)
-            print(f"Crit. Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
-            print(final_metrics)
+            test_res = test_multitask(model=model, data=val_data,
+                                      event_labels_dict=event_labels,
+                                      crit_labels_dict=crit_labels)
+            print(f"Event Val set - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
+            print(test_res.event.final_metrics)
+            print(f"Crit. Val set - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
+            print(test_res.crit.final_metrics)
 
-            if f1 < best_f1:
+            if test_res.crit.f1 < best_f1 and early_stop:
                 print('Early convergence. Training stopped.')
-                print(f'Best F1: {best_f1}')
                 break
             else:
-                best_f1 = f1
+                best_f1 = test_res.crit.f1
+
+    print(f'Best F1: {best_f1}')
 
     return model
 
@@ -212,6 +212,21 @@ def invert_dict(input_dict):
     return {input_dict[key]: key for key in input_dict}
 
 
+def update_pred_scores(y, y_pred, scores):
+    y_pred_value = torch.argmax(y_pred, 1)
+    diff_vector = y - y_pred_value
+    correct = (diff_vector == 0).sum().item()
+    for i in range(len(y)):
+        actual = y[i].item()
+        pred = y_pred_value[i].item()
+        scores[actual]['gold'] += 1
+        scores[pred]['predicted'] += 1
+        if actual == pred:
+            scores[actual]['correct'] += 1
+
+    return scores, correct
+
+
 def calc_metrics(scores, label_map):
     final_metrics = {}
     macro_f1 = 0.0
@@ -254,5 +269,31 @@ def test_model(model, data, labels_dict):
     return accuracy, macro_f1, final_metrics
 
 
-#train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
-#train_model(16, 300, 100, 'bert', 'event', 'earthquake')
+def test_multitask(model, data, event_labels_dict, crit_labels_dict):
+    correct = edict(event=0.0, crit=0.0)
+    total = 0.0
+
+    label_map = edict(event=invert_dict(event_labels_dict),
+                      crit=invert_dict(crit_labels_dict))
+
+    scores = edict(event={label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map.event},
+                   crit={label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map.crit})
+
+    for x, y_event, y_crit, seq_lengths in data:
+        total += len(y_event)
+        y_pred_event, y_pred_crit = model(x, seq_lengths)
+
+        scores.event, correct_batch = update_pred_scores(y_event, y_pred_event, scores.event)
+        correct.event += correct_batch
+
+        scores.crit, correct_batch = update_pred_scores(y_crit, y_pred_crit, scores.crit)
+        correct.crit += correct_batch
+
+    accuracy_event = correct.event / total
+    macro_f1_event, final_metrics_event = calc_metrics(scores=scores.event, label_map=label_map.event)
+
+    accuracy_crit = correct.crit / total
+    macro_f1_crit, final_metrics_crit = calc_metrics(scores=scores.crit, label_map=label_map.crit)
+
+    return edict(event=edict(accuracy=accuracy_event, f1=macro_f1_event, final_metrics=final_metrics_event),
+                 crit=edict(accuracy=accuracy_crit, f1=macro_f1_crit, final_metrics=final_metrics_crit))

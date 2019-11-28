@@ -96,12 +96,13 @@ class BiLSTM_BERT_MultiTask(nn.Module):
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
+
         return log_probs_event, log_probs_crit
 
-    def loss(self, y_pred, y, sentences_length, label_size):
+    def loss(self, y_pred, y, sentences_length, output_size):
         y = y.view(-1)
-        y_pred = y_pred.view(-1, label_size)
-        mask = (y > 0).float()
+        y_pred = y_pred.view(-1, output_size)
+        mask = (y >= 0).float()
         nb_tokens = int(torch.sum(mask).item())
         y_pred = y_pred[range(y_pred.shape[0]), y] * mask
         ce_loss = -torch.sum(y_pred) / nb_tokens
