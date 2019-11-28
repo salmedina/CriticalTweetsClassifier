@@ -8,8 +8,10 @@ import numpy as np
 
 bert = BertEmbedding(max_seq_length=50)
 
-#Need to run it if in a new dataset
 def saveBERT(embedding_file, data_file='../data/labeled_data.json'):
+    '''
+    This function is required to run if there is a new dataset
+    '''
     f = open(data_file)
     data = json.load(f)
     sentences = list()
@@ -45,16 +47,18 @@ def saveBERT(embedding_file, data_file='../data/labeled_data.json'):
 def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_vector=[]
     words= sentence.split(' ')
-    #Data already preprocessec and clean!
+
+    #Data already pre-processed and clean!
     if embedding_type == 'bert':
         if id in embeddings:
-            bert_vector= embeddings[id]
+            bert_vector = embeddings[id]
             x_tensor = torch.tensor(bert_vector)
             return x_tensor
         bert_encode= bert([sentence])
         bert_embed= bert_encode[0][1]
         x_tensor = torch.tensor(bert_embed, dtype=torch.float)
         return x_tensor
+
     elif embedding_type == 'glove':
         for word in words:
             word = word.lower()
@@ -64,13 +68,16 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
             x_vector.append(glove_embed)
         x_tensor = torch.tensor(x_vector, dtype=torch.float)
         return x_tensor
+
     for word in words:
         word = word.lower()
         if word not in vocab:
             vocab[word]= [len(vocab)]
         word_embed = vocab[word]
         x_vector.append(word_embed)
+
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
+
     return x_tensor
 
 
@@ -83,7 +90,7 @@ def loadData(embedding_type, event_type='', data_type= 'labeled'):
     X = list()
     Y_cr = list()
     Y_event = list()
-    events = {'<PAD>': 0}
+    events = {}
     ids = []
     for id in data:
         event = data[id]['event'].lower()
@@ -94,19 +101,18 @@ def loadData(embedding_type, event_type='', data_type= 'labeled'):
             X.append(data[id]['text'])
             Y_event.append(events[event])
             if data_type == 'labeled':
-                if data[id]['label'] == 'low':
-                    Y_cr.append(1)
-                else:
-                    Y_cr.append(2)
+                Y_cr.append(0 if data[id]['label'] == 'low' else 1)
+
     indices = [i for i in range(len(X))]
     random.shuffle(indices)
     split = math.ceil(len(X)*0.7)
-    train = list()
-    val = list()
+
     print("Loading embeddings...")
     embeddings = loadEmbeddings(set(ids), embedding_type=embedding_type, embedding_file='../data/bert_embeddings.npy')
     print("Embeddings loaded...")
 
+    train = list()
+    val = list()
     for i in indices:
         if len(X[i]) > 0:
             x_i = encodeSentence(X[i], ids[i], embeddings, vocab, embedding_type)
@@ -121,7 +127,7 @@ def loadData(embedding_type, event_type='', data_type= 'labeled'):
 
 def loadEmbeddings(ids, embedding_type= 'torch', embedding_file= None):
     embeddings = {}
-    if embedding_type=='glove':
+    if embedding_type == 'glove':
         file = '../data/glove.6B.100d.txt'
         f = open(file)
         lines = f.read().split('\n')[:-1]

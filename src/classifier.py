@@ -150,7 +150,7 @@ def train_model(batch_size,
     print("Loading Data....")
     train, val, events, vocab = loadData(embedding_type, event_type=event_type)
     if classifier_mode == 'criticality':
-        labels_dict = {'<PAD>': 0, 'low': 1, 'high': 2}
+        labels_dict = {'low': 0, 'high': 1}
     else:
         labels_dict = events
 

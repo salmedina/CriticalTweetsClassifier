@@ -47,13 +47,11 @@ class BiLSTM_BERT(nn.Module):
     def loss(self, y_pred, y, sentences_length):
         y = y.view(-1)
         y_pred = y_pred.view(-1, self.label_size)
-        mask = (y > 0).float()
+        mask = (y >= 0).float()
         nb_tokens = int(torch.sum(mask).item())
         y_pred = y_pred[range(y_pred.shape[0]), y] * mask
         ce_loss = -torch.sum(y_pred) / nb_tokens
-        # nb_tokens= y.shape[0]
-        # loss = nn.CrossEntropyLoss()
-        # ce_loss = loss(y_pred, y) / nb_tokens
+
         return ce_loss
 
 
