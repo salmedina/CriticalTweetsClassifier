@@ -130,7 +130,7 @@ def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
             print(f"Crit. Val set - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
             print(test_res.crit.final_metrics)
 
-            if test_res.crit.f1 < best_f1 and early_stop:
+            if (test_res.crit.f1 < best_f1) and early_stop:
                 print('Early convergence. Training stopped.')
                 break
             else:
@@ -144,7 +144,7 @@ def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
 def train_model(batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
-                num_layers, epochs, learning_rate, weight_decay,
+                num_layers, epochs, learning_rate, weight_decay, early_stop,
                 use_gpu):
 
     print("Loading Data....")
@@ -198,12 +198,13 @@ def train_model(batch_size,
             print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
 
-            if f1 < best_f1:
+            if (f1 < best_f1) and early_stop:
                 print('Early convergence. Training stopped.')
-                print(f'Best F1: {best_f1}')
                 break
             else:
                 best_f1 = f1
+
+    print(f'Best F1: {best_f1}')
 
     return model
 

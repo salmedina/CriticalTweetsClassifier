@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multi_task}')
     parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Training weight decay')
-    parser.add_argument('--early_stop', type=bool, default=True, help='Enable/Disable early stopping based on F1')
+    parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
     parser.add_argument('--data_path', type=str, help='Path to the json file to use for classification')
     parser.add_argument('--valid_freq', type=int, help='Number of epochs when the validation will be run')
     parser.add_argument('--output_path', type=str, default='./output',
@@ -42,10 +42,11 @@ Use GPU:        {args.use_gpu}
 
 def main(args):
     print_train_params(args)
-    if args.task == 'multi_task':
-        train_multitask(args.batch_size, args.hidden_dim, args.embedding_type, args.event_type,
-                    args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
-                    args.use_gpu)
+    if args.task in ['multi_task']:
+        train_multitask(args.batch_size,
+                        args.hidden_dim, args.embedding_type, args.event_type,
+                        args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
+                        args.use_gpu)
     else:
         train_model(args.batch_size,
                     args.embedding_dim, args.hidden_dim, args.embedding_type,
