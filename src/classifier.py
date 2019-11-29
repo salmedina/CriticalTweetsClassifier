@@ -274,27 +274,27 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
     correct = edict(event=0.0, crit=0.0)
     total = 0.0
 
-    label_map = edict(event=invert_dict(event_labels_dict),
-                      crit=invert_dict(crit_labels_dict))
+    label_map_event = invert_dict(event_labels_dict)
+    label_map_crit = invert_dict(crit_labels_dict)
 
-    scores = edict(event={label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map.event},
-                   crit={label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map.crit})
+    scores_event = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map_event}
+    scores_crit = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map_crit}
 
     for x, y_event, y_crit, seq_lengths in data:
         total += len(y_event)
         y_pred_event, y_pred_crit = model(x, seq_lengths)
 
-        scores.event, correct_batch = update_pred_scores(y_event, y_pred_event, scores.event)
+        scores_event, correct_batch = update_pred_scores(y_event, y_pred_event, scores_event)
         correct.event += correct_batch
 
-        scores.crit, correct_batch = update_pred_scores(y_crit, y_pred_crit, scores.crit)
+        scores_crit, correct_batch = update_pred_scores(y_crit, y_pred_crit, scores_crit)
         correct.crit += correct_batch
 
     accuracy_event = correct.event / total
-    macro_f1_event, final_metrics_event = calc_metrics(scores=scores.event, label_map=label_map.event)
+    macro_f1_event, final_metrics_event = calc_metrics(scores=scores_event, label_map=label_map_event)
 
     accuracy_crit = correct.crit / total
-    macro_f1_crit, final_metrics_crit = calc_metrics(scores=scores.crit, label_map=label_map.crit)
+    macro_f1_crit, final_metrics_crit = calc_metrics(scores=scores_crit, label_map=label_map_crit)
 
     return edict(event=edict(accuracy=accuracy_event, f1=macro_f1_event, final_metrics=final_metrics_event),
                  crit=edict(accuracy=accuracy_crit, f1=macro_f1_crit, final_metrics=final_metrics_crit))
