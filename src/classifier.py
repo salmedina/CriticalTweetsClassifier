@@ -185,5 +185,5 @@ def test_event_type(model, data, events):
     macro_f1 /= len(final_metrics)
     return accuracy, macro_f1, final_metrics
 
-#train_model(16, 300, 100, 'bert', 'criticality', 'earthquake')
+#train_model(16, 300, 100, 'bert', 'criticality', ['flood', 'typhoon'])
 #train_model(16, 300, 100, 'bert', 'event', 'earthquake')

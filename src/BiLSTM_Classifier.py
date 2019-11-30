@@ -44,7 +44,7 @@ class BiLSTMEventType(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        y = self.hidden2label(X[:, -1, :])
+        y = self.hidden2label(X[:, 0, :])
         # probs = F.softmax(y, dim=1)
         log_probs = F.log_softmax(y, dim=1)
         return log_probs
