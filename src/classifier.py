@@ -4,7 +4,7 @@ import math
 import torch
 import torch.optim as optim
 from BiLSTM_Classifier import BiLSTMEventType
-from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask
+from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask, BiLSTM_BERT_Adversarial
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
 from data_load import loadData
@@ -60,7 +60,7 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
     return batches
 
 
-def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
+def train_multitask(adversarial, batch_size, hidden_dim, embedding_type, event_type,
                     num_layers, epochs, learning_rate, weight_decay, early_stop,
                     use_gpu):
 
@@ -76,9 +76,14 @@ def train_multitask(batch_size, hidden_dim, embedding_type, event_type,
     if embedding_type == 'bert' or embedding_type == 'glove':
         embedding_dim = train_data[0][0].shape[1]
         val_data = batchify(val_data, batch_size, classifier_mode='multi_task', embedding_dim=embedding_dim, randomize=False)
-        model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
-                            event_output_size=event_output_size, crit_output_size=crit_output_size,
-                            use_gpu=use_gpu, batch_size=batch_size)
+        if adversarial:
+            model = BiLSTM_BERT_Adversarial(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
+                                          event_output_size=event_output_size, crit_output_size=crit_output_size,
+                                          use_gpu=use_gpu, batch_size=batch_size)
+        else:
+            model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
+                                event_output_size=event_output_size, crit_output_size=crit_output_size,
+                                use_gpu=use_gpu, batch_size=batch_size)
     else:
         #TODO: Implement multi-task learning for learning embeddings
         print('ERROR: Multi-task model only works with pre-trained embeddings')
