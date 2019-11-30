@@ -73,7 +73,7 @@ def train_multitask(adversarial, batch_size, hidden_dim, embedding_type, event_t
     crit_output_size = len(crit_labels)
 
     print('Training multitask model...')
-    if embedding_type == 'bert' or embedding_type == 'glove':
+    if embedding_type in ['bert', 'glove']:
         embedding_dim = train_data[0][0].shape[1]
         val_data = batchify(val_data, batch_size, classifier_mode='multi_task', embedding_dim=embedding_dim, randomize=False)
         if adversarial:
@@ -160,7 +160,7 @@ def train_model(batch_size,
         labels_dict = events
 
     print('Training model...')
-    if embedding_type == 'bert' or embedding_type == 'glove':
+    if embedding_type in ['bert', 'glove']:
         embedding_dim = train[0][0].shape[1]
         val = batchify(val, batch_size, classifier_mode, embedding_dim=embedding_dim, randomize=False)
         model = BiLSTM_BERT(embedding_dim, hidden_dim, len(labels_dict), use_gpu, batch_size, num_layers)
@@ -178,7 +178,7 @@ def train_model(batch_size,
         print('')
         print(f'======== Epoch Number: {epoch}')
         total_loss = 0.
-        if embedding_type == 'bert' or embedding_type == 'glove':
+        if embedding_type in ['bert', 'glove']:
             train_i = batchify(train, batch_size, classifier_mode, embedding_dim= embedding_dim)
         else:
             train_i = batchify(train, batch_size, classifier_mode)
