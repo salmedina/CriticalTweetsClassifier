@@ -81,8 +81,7 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     return x_tensor
 
 
-def loadData(embedding_type, event_type='', data_type= 'labeled'):
-    data_path = '../data/labeled_data.json' if data_type == 'labeled' else '../data/unlabeled_data.json'
+def loadData(embedding_type, event_type, data_path, data_type='labeled'):
     f = open(data_path)
 
     vocab = {'<PAD>': 0}
@@ -125,7 +124,7 @@ def loadData(embedding_type, event_type='', data_type= 'labeled'):
     return train, val, events, vocab
 
 
-def loadEmbeddings(ids, embedding_type= 'torch', embedding_file= None):
+def loadEmbeddings(ids, embedding_type='torch', embedding_file= None):
     embeddings = {}
     if embedding_type == 'glove':
         file = '../data/glove.6B.100d.txt'
@@ -143,5 +142,3 @@ def loadEmbeddings(ids, embedding_type= 'torch', embedding_file= None):
     elif embedding_type== 'bert':
         embeddings = np.load(embedding_file).item()
     return embeddings
-
-#saveBERT('../data/bert_embeddings.npy')

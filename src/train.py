@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Training weight decay')
     parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
-    parser.add_argument('--data_path', type=str, help='Path to the json file to use for classification')
+    parser.add_argument('--data_path', type=str, default='../data/labeled_data.json', help='Path to the json file to use for classification')
     parser.add_argument('--valid_freq', type=int, help='Number of epochs when the validation will be run')
     parser.add_argument('--output_path', type=str, default='./output',
                         help='Path to the directory where output will be saved')
@@ -44,12 +44,12 @@ def main(args):
     print_train_params(args)
     if args.task in ['multi_task', 'adversarial']:
         adversarial_training = args.task == 'adversarial'
-        train_multitask(adversarial_training, args.batch_size,
+        train_multitask(args.data_path, adversarial_training, args.batch_size,
                         args.hidden_dim, args.embedding_type, args.event_type,
                         args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
                         args.use_gpu)
     elif args.task in ['event_type', 'criticality']:
-        train_model(args.batch_size,
+        train_model(args.data_path, args.batch_size,
                     args.embedding_dim, args.hidden_dim, args.embedding_type,
                     args.task, args.event_type,
                     args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,

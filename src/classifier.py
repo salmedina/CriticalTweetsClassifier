@@ -60,13 +60,13 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
     return batches
 
 
-def train_multitask(adversarial, batch_size, hidden_dim, embedding_type, event_type,
+def train_multitask(data_path, adversarial, batch_size,
+                    hidden_dim, embedding_type, event_type,
                     num_layers, epochs, learning_rate, weight_decay, early_stop,
                     use_gpu):
 
     print("Loading Data....")
-    train_data, val_data, events, vocab = loadData(embedding_type,
-                                         event_type=event_type)
+    train_data, val_data, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
     event_labels = events
     crit_labels = {'low': 0, 'high': 1}
     event_output_size = len(event_labels)
@@ -146,14 +146,14 @@ def train_multitask(adversarial, batch_size, hidden_dim, embedding_type, event_t
     return model
 
 
-def train_model(batch_size,
+def train_model(data_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
                 num_layers, epochs, learning_rate, weight_decay, early_stop,
                 use_gpu):
 
     print("Loading Data....")
-    train, val, events, vocab = loadData(embedding_type, event_type=event_type)
+    train, val, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
     if classifier_mode == 'criticality':
         labels_dict = {'low': 0, 'high': 1}
     else:
