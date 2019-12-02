@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
     parser.add_argument('--valid_freq', type=int, help='Number of epochs when the validation will be run')
     parser.add_argument('--data_path', type=str, default='../data/labeled_data.json', help='Path to the json file to use for classification')
-    parser.add_argument('--experiment_path', type=str, default='', help='Path to the experiment description yaml file')
+    parser.add_argument('--experiment_path', type=str, default=None, help='Path to the experiment description yaml file')
     parser.add_argument('--output_path', type=str, default='./output',
                         help='Path to the directory where output will be saved')
 
