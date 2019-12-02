@@ -123,7 +123,7 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
                                       event_labels_dict=event_labels,
                                       crit_labels_dict=crit_labels)
             print("Event Type ", event_type)
-            print('Train Set')
+            print('⭑ Train Set ⭑')
             print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
             print(test_res.event.final_metrics)
             print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
@@ -133,7 +133,7 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
             test_res = test_multitask(model=model, data=val_data,
                                       event_labels_dict=event_labels,
                                       crit_labels_dict=crit_labels)
-            print('Val Set')
+            print('⭑ Val Set ⭑')
             print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
             print(test_res.event.final_metrics)
             print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
