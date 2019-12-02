@@ -5,7 +5,7 @@ from BiLSTM_Classifier import BiLSTMEventType
 from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask, BiLSTM_BERT_Adversarial
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
-from data_load import loadData
+from data_load import loadData, loadExperimentData
 from easydict import EasyDict as edict
 
 random.seed(1107)
@@ -45,10 +45,10 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
             y_event_tensor[i] = y_i
             y_crit_tensor[i] = y_cr
 
-        if classifier_mode == 'criticality':
-            batches.append((x_tensor, y_crit_tensor, real_lengths))
-        elif classifier_mode == 'event_type':
+        if classifier_mode == 'event_type':
             batches.append((x_tensor, y_event_tensor, real_lengths))
+        elif classifier_mode == 'criticality':
+            batches.append((x_tensor, y_crit_tensor, real_lengths))
         elif classifier_mode == 'multi_task':
             batches.append((x_tensor, y_event_tensor, y_crit_tensor, real_lengths))
         else:
@@ -118,18 +118,20 @@ def train_multitask(data_path, adversarial, batch_size,
                                       event_labels_dict=event_labels,
                                       crit_labels_dict=crit_labels)
             print("Event Type ", event_type)
-            print(f"Event Train set - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
+            print('Train Set')
+            print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
             print(test_res.event.final_metrics)
-            print(f"Crit. Train set - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
+            print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
             print(test_res.crit.final_metrics)
 
             # Test on validation data
             test_res = test_multitask(model=model, data=val_data,
                                       event_labels_dict=event_labels,
                                       crit_labels_dict=crit_labels)
-            print(f"Event Val set - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
+            print('Val Set')
+            print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
             print(test_res.event.final_metrics)
-            print(f"Crit. Val set - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
+            print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
             print(test_res.crit.final_metrics)
 
             if (test_res.crit.f1 < best_f1) and early_stop:
@@ -151,6 +153,10 @@ def train_model(data_path, batch_size,
 
     print("Loading Data....")
     train, val, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
+    # train, val, events, vocab = loadExperimentData(desc_path='../data/experiments/earthquake.yaml',
+    #                                                embedding_type=embedding_type,
+    #                                                data_path=data_path)
+
     if classifier_mode == 'criticality':
         labels_dict = {'low': 0, 'high': 1}
     else:

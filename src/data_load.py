@@ -148,8 +148,12 @@ def loadData(embedding_type, event_type, data_path, data_type='labeled'):
 
 def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'):
     # Load data split from experiment descriptor file
-    experiment_split = edict(yaml.load(desc_path, Loader=yaml.FullLoader))
+    experiment_split = edict(yaml.load(open(desc_path), Loader=yaml.FullLoader))
+    experiment_split.train = [e.lower() for e in experiment_split.train]
+    experiment_split.valid = [e.lower() for e in experiment_split.valid]
+    experiment_events = experiment_split.train + experiment_split.valid
     events_idx = {event: idx for idx, event in enumerate(experiment_split.train)}
+
 
     # Load data from json file
     f = open(data_path)
@@ -168,12 +172,13 @@ def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'
     val = list()
     for id in data:
         event = data[id]['event'].lower()
+        if event not in experiment_events:
+            continue
 
         x = encodeTweet(data[id]['text'], id, embeddings, vocab, embedding_type)
-        y_event = torch.tensor(events_idx[event], dtype=torch.long)
         y_cr = 0 if data[id]['label'] == 'low' else 1
-
         if event in experiment_split.train:
+            y_event = torch.tensor(events_idx[event], dtype=torch.long)
             train.append((x, y_event, y_cr))
         elif event in experiment_split.valid:
             # y_event is irrelevant for validation since we focus on criticality
