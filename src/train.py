@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('--hidden_dim', type=int, default=100, help='Hidden layer size')
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training the model')
-    parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multi_task, adversarial}')
+    parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multitask, adversarial}')
     parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Training weight decay')
     parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
@@ -44,7 +44,7 @@ Use GPU:        {args.use_gpu}
 
 def main(args):
     print_train_params(args)
-    if args.task in ['multi_task', 'adversarial']:
+    if args.task in ['multitask', 'adversarial']:
         adversarial_training = args.task == 'adversarial'
         train_multitask(args.data_path, adversarial_training, args.batch_size,
                         args.hidden_dim, args.embedding_type, args.event_type,

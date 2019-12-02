@@ -63,7 +63,10 @@ def train_multitask(data_path, adversarial, batch_size,
                     use_gpu):
 
     print("Loading Data....")
-    train_data, val_data, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
+    # train_data, val_data, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
+    train, val, events, vocab = loadExperimentData(desc_path='../data/experiments/earthquake.yaml',
+                                                   embedding_type=embedding_type,
+                                                   data_path=data_path)
     event_labels = events
     crit_labels = {'low': 0, 'high': 1}
     event_output_size = len(event_labels)
@@ -72,7 +75,7 @@ def train_multitask(data_path, adversarial, batch_size,
     print('Training multitask model...')
     if embedding_type in ['bert', 'glove']:
         embedding_dim = train_data[0][0].shape[1]
-        val_data = batchify(val_data, batch_size, classifier_mode='multi_task', embedding_dim=embedding_dim, randomize=False)
+        val_data = batchify(val_data, batch_size, classifier_mode='multitask', embedding_dim=embedding_dim, randomize=False)
         if adversarial:
             model = BiLSTM_BERT_Adversarial(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
                                           event_output_size=event_output_size, crit_output_size=crit_output_size,
