@@ -1,6 +1,4 @@
-import json
 import random
-import math
 import torch
 import torch.optim as optim
 from BiLSTM_Classifier import BiLSTMEventType
@@ -9,7 +7,6 @@ import torch.nn.functional as F
 from bert_embedding import BertEmbedding
 from data_load import loadData
 from easydict import EasyDict as edict
-import pdb
 
 random.seed(1107)
 torch.manual_seed(1107)
