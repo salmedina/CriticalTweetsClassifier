@@ -276,8 +276,6 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
     correct = edict(event=0.0, crit=0.0)
     total = 0.0
 
-#train_model(16, 300, 100, 'bert', 'criticality', ['flood', 'typhoon'])
-#train_model(16, 300, 100, 'bert', 'event', 'earthquake')
     label_map_event = invert_dict(event_labels_dict)
     label_map_crit = invert_dict(crit_labels_dict)
 
