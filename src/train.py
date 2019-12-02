@@ -6,12 +6,14 @@ def parse_args():
     parser.add_argument('--use_gpu', type=bool, default=False, help='Flag for using the GPU')
     parser.add_argument('--embedding_type', type=str, default='bert', help='Word embedding to be used: {torch, glove, bert}')
     parser.add_argument('--event_type', type=str, default='earthquake',
-                        help='Determines the subset of dataset used for experiment.')
+                        help='Determines the subset of dataset used for experiment. If multiple, separate them with commas')
     parser.add_argument('--embedding_dim', type=int, default=300,
                         help='Word embedding dimension when using torch embeddings')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size used during training')
     parser.add_argument('--hidden_dim', type=int, default=100, help='Hidden layer size')
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training the model')
+    parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type}')
     parser.add_argument('--num_epochs', type=int, default=5, help='Number of epochs for training the model')
     parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multi_task, adversarial}')
     parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')

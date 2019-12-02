@@ -47,7 +47,6 @@ def saveBERT(embedding_file, data_file='../data/labeled_data.json'):
 def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
     x_vector=[]
     words= sentence.split(' ')
-
     #Data already pre-processed and clean!
     if embedding_type == 'bert':
         if id in embeddings:
@@ -58,7 +57,6 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
         bert_embed= bert_encode[0][1]
         x_tensor = torch.tensor(bert_embed, dtype=torch.float)
         return x_tensor
-
     elif embedding_type == 'glove':
         for word in words:
             word = word.lower()
@@ -68,7 +66,6 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
             x_vector.append(glove_embed)
         x_tensor = torch.tensor(x_vector, dtype=torch.float)
         return x_tensor
-
     for word in words:
         word = word.lower()
         if word not in vocab:
@@ -80,10 +77,8 @@ def encodeSentence(sentence, id, embeddings, vocab, embedding_type):
 
     return x_tensor
 
-
 def loadData(embedding_type, event_type, data_path, data_type='labeled'):
     f = open(data_path)
-
     vocab = {'<PAD>': 0}
     data = json.load(f)
     X = list()
@@ -93,7 +88,11 @@ def loadData(embedding_type, event_type, data_path, data_type='labeled'):
     ids = []
     for id in data:
         event = data[id]['event'].lower()
-        if event_type in event:
+        include= False
+        for e in event_type.split(','):
+            if e in event:
+                include= True
+        if include:
             if event not in events:
                 events[event] = len(events)
             ids.append(id)
@@ -101,15 +100,12 @@ def loadData(embedding_type, event_type, data_path, data_type='labeled'):
             Y_event.append(events[event])
             if data_type == 'labeled':
                 Y_cr.append(0 if data[id]['label'] == 'low' else 1)
-
     indices = [i for i in range(len(X))]
     random.shuffle(indices)
     split = math.ceil(len(X)*0.7)
-
     print("Loading embeddings...")
     embeddings = loadEmbeddings(set(ids), embedding_type=embedding_type, embedding_file='../data/bert_embeddings.npy')
     print("Embeddings loaded...")
-
     train = list()
     val = list()
     for i in indices:
