@@ -96,7 +96,7 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
 
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    best_f1 = 0.0
+    best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
         print('')
         print(f'======== Epoch Number: {epoch}')
@@ -139,13 +139,21 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
             print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
             print(test_res.crit.final_metrics)
 
-            if (test_res.crit.f1 < best_f1) and early_stop:
+            if (test_res.crit.f1 < best.critical_f1) and early_stop:
                 print('Early convergence. Training stopped.')
                 break
             else:
-                best_f1 = test_res.crit.f1
+                best.epoch = epoch
+                best.acc = test_res.crit.accuracy
+                best.f1 = test_res.crit.f1
+                best.critical_f1 = test_res.crit.final_metrics['high'][2]
+                best.class_metrics = test_res.crit.final_metrics
 
-    print(f'Best F1: {best_f1}')
+    print(f'''Best model:
+    Epoch:   {best.epoch}
+    Acc:     {best.acc:04f}
+    F1:      {best.f1:04f}
+    Metrics: {best.class_metrics}''')
 
     return model
 
