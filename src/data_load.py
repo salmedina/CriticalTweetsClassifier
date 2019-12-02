@@ -184,7 +184,8 @@ def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'
             train.append((x, y_event, y_cr))
         elif event in experiment_split.valid:
             # y_event is irrelevant for validation since we focus on criticality
-            val.append((x, 0, y_cr))
+            y_event = torch.tensor(0, dtype=torch.long)
+            val.append((x, y_event, y_cr))
 
     # Shuffle the samples and split them into train and val
     random.shuffle(train)

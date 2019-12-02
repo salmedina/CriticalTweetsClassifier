@@ -49,7 +49,7 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
             batches.append((x_tensor, y_event_tensor, real_lengths))
         elif classifier_mode == 'criticality':
             batches.append((x_tensor, y_crit_tensor, real_lengths))
-        elif classifier_mode == 'multi_task':
+        elif classifier_mode == 'multitask':
             batches.append((x_tensor, y_event_tensor, y_crit_tensor, real_lengths))
         else:
             batches = None
@@ -64,7 +64,7 @@ def train_multitask(data_path, adversarial, batch_size,
 
     print("Loading Data....")
     # train_data, val_data, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
-    train, val, events, vocab = loadExperimentData(desc_path='../data/experiments/earthquake.yaml',
+    train_data, val_data, events, vocab = loadExperimentData(desc_path='../data/experiments/earthquake.yaml',
                                                    embedding_type=embedding_type,
                                                    data_path=data_path)
     event_labels = events
