@@ -176,6 +176,8 @@ def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'
             continue
 
         x = encodeTweet(data[id]['text'], id, embeddings, vocab, embedding_type)
+        if len(x) < 1:
+            continue
         y_cr = 0 if data[id]['label'] == 'low' else 1
         if event in experiment_split.train:
             y_event = torch.tensor(events_idx[event], dtype=torch.long)
