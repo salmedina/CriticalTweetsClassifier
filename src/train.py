@@ -26,6 +26,10 @@ def parse_args():
     return parser.parse_args()
 
 
+def is_valid_task(task):
+    return task in ['criticality', 'multitask', 'event_type', 'adversarial']
+
+
 def print_train_params(args):
     print(f'''=== Training Params ==========================================
 Event Type:     {args.event_type}
@@ -44,6 +48,10 @@ Use GPU:        {args.use_gpu}
 
 def main(args):
     print_train_params(args)
+    if not is_valid_task(args.task):
+        print(f'{args.task} is an invalid task')
+        return
+
     if args.task in ['multitask', 'adversarial']:
         adversarial_training = args.task == 'adversarial'
         train_multitask(args.data_path, adversarial_training, args.batch_size,
