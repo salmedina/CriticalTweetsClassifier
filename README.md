@@ -14,4 +14,5 @@ different events, by re-constructing our representation space based on a set of 
 pip install easydict
 pip install pytorch-revgrad
 pip install bert-embedding
+pip install pyyaml
 ```
