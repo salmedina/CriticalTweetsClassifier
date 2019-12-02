@@ -183,7 +183,7 @@ def train_model(data_path, desc_path, batch_size,
 
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    best = edict(epoch=0, acc=0.0, f1=0.0, class_metrics=None)
+    best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
         print('')
         print(f'======== Epoch Number: {epoch}')
@@ -212,14 +212,16 @@ def train_model(data_path, desc_path, batch_size,
             accuracy, f1, final_metrics = test_model(model, val, labels_dict)
             print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
+            critical_f1 = final_metrics[2]
 
-            if (f1 < best.f1) and early_stop:
+            if (critical_f1 < best.critical_f1) and early_stop:
                 print('Early convergence. Training stopped.')
                 break
             else:
                 best.epoch = epoch
                 best.acc = accuracy
                 best.f1 = f1
+                best.critical_f1 = critical_f1
                 best.class_metrics = final_metrics
 
     print(f'''Best model:
