@@ -212,7 +212,7 @@ def train_model(data_path, desc_path, batch_size,
             accuracy, f1, final_metrics = test_model(model, val, labels_dict)
             print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
             print(final_metrics)
-            critical_f1 = final_metrics[2]
+            critical_f1 = final_metrics['high'][2]
 
             if (critical_f1 < best.critical_f1) and early_stop:
                 print('Early convergence. Training stopped.')
