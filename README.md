@@ -1,7 +1,7 @@
 # Critical Tweets Classifier
 
-This project is a work on detecting critical tweets that talk about emerging crisis. We use a domain-adaptation technique between
-different events, by re-constructing our representation space based on a set of adversaries.
+This project is a work on detecting tweets that require an action from first responders or the government during an emerging crisis, such as a natural disaster or an attack. We use a domain-adaptation technique between
+different events, by adversarially training a classifier removing the importance on the event per se, allowing the trained model to focus on the criticality of the tweet.
 
 ### Data
 
