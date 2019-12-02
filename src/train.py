@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of epochs for training the model')
     parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multitask, adversarial}')
-    parser.add_argument('--lr', type=float, default=0.03, help='Training learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Training weight decay')
     parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
     parser.add_argument('--valid_freq', type=int, help='Number of epochs when the validation will be run')
