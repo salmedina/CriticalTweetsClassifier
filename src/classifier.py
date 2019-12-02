@@ -183,7 +183,7 @@ def train_model(data_path, desc_path, batch_size,
 
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-    best = edict(epoch=0, acc=0.0, f1=0.0)
+    best = edict(epoch=0, acc=0.0, f1=0.0, class_metrics=None)
     for epoch in range(epochs):
         print('')
         print(f'======== Epoch Number: {epoch}')
@@ -220,11 +220,13 @@ def train_model(data_path, desc_path, batch_size,
                 best.epoch = epoch
                 best.acc = accuracy
                 best.f1 = f1
+                best.class_metrics = final_metrics
 
     print(f'''Best model:
 Epoch:   {best.epoch}
-Acc:     {best.acc}
-F1:      {best.f1}''')
+Acc:     {best.acc:04f}
+F1:      {best.f1:04f}
+Metrics: {best.class_metrics}''')
 
     return model
 
