@@ -1,0 +1,7 @@
+train:
+ - 2015_Nepal_Earthquake_en
+valid:
+ - 2014_Chile_Earthquake_en
+ - 2012_Costa_Rica_earthquake
+ - 2012_Guatemala_earthquake
+ - 2012_Italy_earthquakes

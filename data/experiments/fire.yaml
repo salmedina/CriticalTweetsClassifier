@@ -1,0 +1,4 @@
+train:
+ - 2013_Australia_bushfire
+valid:
+ - 2012_Colorado_wildfires
