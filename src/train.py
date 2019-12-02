@@ -54,12 +54,12 @@ def main(args):
 
     if args.task in ['multitask', 'adversarial']:
         adversarial_training = args.task == 'adversarial'
-        train_multitask(args.data_path, adversarial_training, args.batch_size,
+        train_multitask(args.data_path, args.experiment_path, adversarial_training, args.batch_size,
                         args.hidden_dim, args.embedding_type, args.event_type,
                         args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
                         args.use_gpu)
     elif args.task in ['event_type', 'criticality']:
-        train_model(args.data_path, args.batch_size,
+        train_model(args.data_path, args.experiment_path, args.batch_size,
                     args.embedding_dim, args.hidden_dim, args.embedding_type,
                     args.task, args.event_type,
                     args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,

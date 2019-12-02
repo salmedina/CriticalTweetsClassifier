@@ -49,7 +49,7 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
             batches.append((x_tensor, y_event_tensor, real_lengths))
         elif classifier_mode == 'criticality':
             batches.append((x_tensor, y_crit_tensor, real_lengths))
-        elif classifier_mode == 'multitask':
+        elif classifier_mode in ['multitask', 'adversarial']:
             batches.append((x_tensor, y_event_tensor, y_crit_tensor, real_lengths))
         else:
             batches = None
@@ -57,14 +57,16 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
     return batches
 
 
-def train_multitask(data_path, adversarial, batch_size,
+def train_multitask(data_path, desc_path, adversarial, batch_size,
                     hidden_dim, embedding_type, event_type,
                     num_layers, epochs, learning_rate, weight_decay, early_stop,
                     use_gpu):
 
     print("Loading Data....")
-    # train_data, val_data, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
-    train_data, val_data, events, vocab = loadExperimentData(desc_path='../data/experiments/earthquake.yaml',
+    if desc_path is None:
+        train_data, val_data, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
+    else:
+        train_data, val_data, events, vocab = loadExperimentData(desc_path=desc_path,
                                                    embedding_type=embedding_type,
                                                    data_path=data_path)
     event_labels = events
@@ -99,7 +101,7 @@ def train_multitask(data_path, adversarial, batch_size,
         print('')
         print(f'======== Epoch Number: {epoch}')
         total_loss = 0.
-        train_batches = batchify(train_data, batch_size, 'multi_task', embedding_dim=embedding_dim)
+        train_batches = batchify(train_data, batch_size, 'multitask', embedding_dim=embedding_dim)
 
         for x, y_event, y_crit, seq_lengths in train_batches:
             model.zero_grad()
@@ -148,17 +150,19 @@ def train_multitask(data_path, adversarial, batch_size,
     return model
 
 
-def train_model(data_path, batch_size,
+def train_model(data_path, desc_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
                 num_layers, epochs, learning_rate, weight_decay, early_stop,
                 use_gpu):
 
     print("Loading Data....")
-    train, val, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
-    # train, val, events, vocab = loadExperimentData(desc_path='../data/experiments/earthquake.yaml',
-    #                                                embedding_type=embedding_type,
-    #                                                data_path=data_path)
+    if desc_path is None:
+        train, val, events, vocab = loadData(embedding_type, data_path=data_path, event_type=event_type)
+    else:
+        train, val, events, vocab = loadExperimentData(desc_path=desc_path,
+                                                       embedding_type=embedding_type,
+                                                       data_path=data_path)
 
     if classifier_mode == 'criticality':
         labels_dict = {'low': 0, 'high': 1}
