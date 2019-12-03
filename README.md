@@ -15,6 +15,7 @@ pip install easydict
 pip install pytorch-revgrad
 pip install bert-embedding
 pip install pyyaml
+pip install pytorch-transformers
 ```
 
 ### Partial Results
