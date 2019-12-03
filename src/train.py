@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multitask, adversarial}')
     parser.add_argument('--lr', type=float, default=0.001, help='Training learning rate')
     parser.add_argument('--wd', type=float, default=1e-4, help='Training weight decay')
+    parser.add_argument('--momentum', type=float, default=0.9, help='Training momentum')
     parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
     parser.add_argument('--valid_freq', type=int, help='Number of epochs when the validation will be run')
     parser.add_argument('--data_path', type=str, default='../data/labeled_data.json', help='Path to the json file to use for classification')
@@ -41,6 +42,7 @@ def print_train_params(args):
     Batch Size:        {args.batch_size}
     Learning Rate:     {args.lr}
     Weight Decay:      {args.wd}
+    Momentum:          {args.momentum}
     Early Stopping:    {args.early_stop}
     Exp. Descriptor:   {args.exp_desc}
     Use GPU:           {args.use_gpu}
@@ -57,13 +59,13 @@ def main(args):
         train_multitask(args.data_path, args.exp_desc, args.batch_size,
                         args.hidden_dim, args.embedding_type,
                         args.task, args.event_type,
-                        args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
+                        args.num_layers, args.num_epochs, args.lr, args.wd, args.momentum, args.early_stop,
                         args.use_gpu)
     elif args.task in ['event_type', 'criticality']:
         train_model(args.data_path, args.exp_desc, args.batch_size,
                     args.embedding_dim, args.hidden_dim, args.embedding_type,
                     args.task, args.event_type,
-                    args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
+                    args.num_layers, args.num_epochs, args.lr, args.wd, args.momentum, args.early_stop,
                     args.use_gpu)
     else:
         print('Unknown task.')
