@@ -57,9 +57,10 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
     return batches
 
 
-def train_multitask(data_path, desc_path, adversarial, batch_size,
-                    hidden_dim, embedding_type, event_type,
-                    num_layers, epochs, learning_rate, weight_decay, early_stop,
+def train_multitask(data_path, desc_path, batch_size,
+                    hidden_dim, embedding_type,
+                    classifier_mode, event_type,
+                    num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
                     use_gpu):
 
     print("Loading Data....")
@@ -78,14 +79,15 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
     if embedding_type in ['bert', 'glove']:
         embedding_dim = train_data[0][0].shape[1]
         val_data = batchify(val_data, batch_size, classifier_mode='multitask', embedding_dim=embedding_dim, randomize=False)
-        if adversarial:
-            model = BiLSTM_BERT_Adversarial(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
+        if classifier_mode == 'multitask':
+            model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
                                           event_output_size=event_output_size, crit_output_size=crit_output_size,
                                           use_gpu=use_gpu, batch_size=batch_size)
-        else:
-            model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
-                                event_output_size=event_output_size, crit_output_size=crit_output_size,
-                                use_gpu=use_gpu, batch_size=batch_size)
+        elif classifier_mode == 'adversarial':
+            model = BiLSTM_BERT_Adversarial(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
+                                            event_output_size=event_output_size, crit_output_size=crit_output_size,
+                                            use_gpu=use_gpu, batch_size=batch_size)
+
     else:
         #TODO: Implement multi-task learning for learning embeddings
         print('ERROR: Multi-task model only works with pre-trained embeddings')
@@ -94,7 +96,7 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
     if use_gpu:
         model = model.cuda()
 
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
@@ -139,16 +141,18 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
             print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
             print(test_res.crit.final_metrics)
 
-            if (test_res.crit.f1 < best.critical_f1) and early_stop:
+            critical_f1 = test_res.crit.final_metrics['high'][2]
+            if (critical_f1 < best.critical_f1) and early_stop:
                 print('Early convergence. Training stopped.')
                 break
-            else:
+            elif critical_f1 > best.critical_f1:
                 best.epoch = epoch
                 best.acc = test_res.crit.accuracy
                 best.f1 = test_res.crit.f1
                 best.critical_f1 = test_res.crit.final_metrics['high'][2]
                 best.class_metrics = test_res.crit.final_metrics
 
+    print(f'{classifier_mode} {embedding_type}')
     print(f'''Best model:
     Epoch:   {best.epoch}
     Acc:     {best.acc:04f}
@@ -161,7 +165,7 @@ def train_multitask(data_path, desc_path, adversarial, batch_size,
 def train_model(data_path, desc_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
-                num_layers, epochs, learning_rate, weight_decay, early_stop,
+                num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
                 use_gpu):
 
     print("Loading Data....")
@@ -189,7 +193,7 @@ def train_model(data_path, desc_path, batch_size,
     if use_gpu:
         model = model.cuda()
 
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
@@ -225,18 +229,19 @@ def train_model(data_path, desc_path, batch_size,
             if (critical_f1 < best.critical_f1) and early_stop:
                 print('Early convergence. Training stopped.')
                 break
-            else:
+            elif critical_f1 > best.critical_f1:
                 best.epoch = epoch
                 best.acc = accuracy
                 best.f1 = f1
                 best.critical_f1 = critical_f1
                 best.class_metrics = final_metrics
 
+    print(f'{classifier_mode} {embedding_type}')
     print(f'''Best model:
-Epoch:   {best.epoch}
-Acc:     {best.acc:04f}
-F1:      {best.f1:04f}
-Metrics: {best.class_metrics}''')
+    Epoch:   {best.epoch}
+    Acc:     {best.acc:04f}
+    F1:      {best.f1:04f}
+    Metrics: {best.class_metrics}''')
 
     return model
 

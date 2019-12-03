@@ -32,18 +32,18 @@ def is_valid_task(task):
 
 def print_train_params(args):
     print(f'''=== Training Params ==========================================
-Event Type:        {args.event_type}
-Embedding Type:    {args.embedding_type}
-Embedding Dim:     {args.embedding_dim}
-Hidden Dim:        {args.hidden_dim}
-Mode:              {args.task}
-Num Layers:        {args.num_layers}
-Batch Size:        {args.batch_size}
-Learning Rate:     {args.lr}
-Weight Decay:      {args.wd}
-Early Stopping:    {args.early_stop}
-Exp. Descriptor:   {args.exp_desc}
-Use GPU:           {args.use_gpu}
+    Event Type:        {args.event_type}
+    Embedding Type:    {args.embedding_type}
+    Embedding Dim:     {args.embedding_dim}
+    Hidden Dim:        {args.hidden_dim}
+    Mode:              {args.task}
+    Num Layers:        {args.num_layers}
+    Batch Size:        {args.batch_size}
+    Learning Rate:     {args.lr}
+    Weight Decay:      {args.wd}
+    Early Stopping:    {args.early_stop}
+    Exp. Descriptor:   {args.exp_desc}
+    Use GPU:           {args.use_gpu}
 ==============================================================''')
 
 
@@ -54,9 +54,9 @@ def main(args):
         return
 
     if args.task in ['multitask', 'adversarial']:
-        adversarial_training = args.task == 'adversarial'
-        train_multitask(args.data_path, args.exp_desc, adversarial_training, args.batch_size,
-                        args.hidden_dim, args.embedding_type, args.event_type,
+        train_multitask(args.data_path, args.exp_desc, args.batch_size,
+                        args.hidden_dim, args.embedding_type,
+                        args.task, args.event_type,
                         args.num_layers, args.num_epochs, args.lr, args.wd, args.early_stop,
                         args.use_gpu)
     elif args.task in ['event_type', 'criticality']:
