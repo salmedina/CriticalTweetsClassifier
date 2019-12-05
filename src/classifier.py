@@ -200,7 +200,8 @@ def train_model(data_path, desc_path, batch_size,
     if use_gpu:
         model = model.cuda()
 
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
+    # optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
@@ -218,6 +219,7 @@ def train_model(data_path, desc_path, batch_size,
             y_pred = model(x, seq_lengths)
             loss = model.loss(y_pred, y, seq_lengths)
             total_loss += loss.item()
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             del loss
