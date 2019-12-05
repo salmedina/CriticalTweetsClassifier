@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument('--exp_desc', type=str, default=None, help='Path to the experiment description yaml file')
     parser.add_argument('--output_path', type=str, default='./output',
                         help='Path to the directory where output will be saved')
+    parser.add_argument('--mute', action='store_false', default=True, help='Print test results on every epoch')
 
     return parser.parse_args()
 
@@ -43,8 +44,6 @@ def print_train_params(args):
 ==============================================================''')
 
 
-
-
 def main(args):
     print_train_params(args)
     if not is_valid_task(args.task):
@@ -52,6 +51,7 @@ def main(args):
         return
 
     for run_id in range(args.num_runs):
+        print(f'EXPERIMENT {run_id}')
         lr = np.exp(np.random.uniform(np.log(1e-5), np.log(1.)))
         wd = np.exp(np.random.uniform(np.log(1e-7), np.log(1.)))
         m = np.random.uniform(0.01, 0.99)
@@ -61,15 +61,15 @@ def main(args):
                             args.hidden_dim, args.embedding_type,
                             args.task, args.event_type,
                             args.num_layers, args.num_epochs, lr, wd, m, args.early_stop,
-                            args.use_gpu)
+                            args.use_gpu, args.mute)
         elif args.task in ['event_type', 'criticality']:
             train_model(args.data_path, args.exp_desc, args.batch_size,
                         args.embedding_dim, args.hidden_dim, args.embedding_type,
                         args.task, args.event_type,
                         args.num_layers, args.num_epochs, lr, wd, m, args.early_stop,
-                        args.use_gpu)
+                        args.use_gpu, args.mute)
 
-        print(f'LR: {lr:04f}     WD: {wd:05f}     M: {m:04f}')
+        print(f'LR: {lr}     WD: {wd}     M: {m}')
         print('-----------------------------------------------------------------')
 
 

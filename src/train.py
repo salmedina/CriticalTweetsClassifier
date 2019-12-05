@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument('--exp_desc', type=str, default=None, help='Path to the experiment description yaml file')
     parser.add_argument('--output_path', type=str, default='./output',
                         help='Path to the directory where output will be saved')
+    parser.add_argument('--mute', action='store_false', default=True, help='Print test results on every epoch')
 
     return parser.parse_args()
 
@@ -60,13 +61,13 @@ def main(args):
                         args.hidden_dim, args.embedding_type,
                         args.task, args.event_type,
                         args.num_layers, args.num_epochs, args.lr, args.wd, args.momentum, args.early_stop,
-                        args.use_gpu)
+                        args.use_gpu, args.mute)
     elif args.task in ['event_type', 'criticality']:
         train_model(args.data_path, args.exp_desc, args.batch_size,
                     args.embedding_dim, args.hidden_dim, args.embedding_type,
                     args.task, args.event_type,
                     args.num_layers, args.num_epochs, args.lr, args.wd, args.momentum, args.early_stop,
-                    args.use_gpu)
+                    args.use_gpu, args.mute)
     else:
         print('Unknown task.')
 

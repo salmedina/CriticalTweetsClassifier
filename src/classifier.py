@@ -61,7 +61,7 @@ def train_multitask(data_path, desc_path, batch_size,
                     hidden_dim, embedding_type,
                     classifier_mode, event_type,
                     num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
-                    use_gpu):
+                    use_gpu, verbose):
 
     print("Loading Data....")
     if desc_path is None:
@@ -75,7 +75,7 @@ def train_multitask(data_path, desc_path, batch_size,
     event_output_size = len(event_labels)
     crit_output_size = len(crit_labels)
 
-    print('Training multitask model...')
+    print(f'Training {classifier_mode} model...')
     if embedding_type in ['bert', 'glove']:
         embedding_dim = train_data[0][0].shape[1]
         val_data = batchify(val_data, batch_size, classifier_mode='multitask', embedding_dim=embedding_dim, randomize=False)
@@ -100,8 +100,9 @@ def train_multitask(data_path, desc_path, batch_size,
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
-        print('')
-        print(f'======== Epoch Number: {epoch}')
+        if verbose:
+            print('')
+            print(f'======== Epoch Number: {epoch}')
         total_loss = 0.
         train_batches = batchify(train_data, batch_size, 'multitask', embedding_dim=embedding_dim)
 
@@ -121,25 +122,27 @@ def train_multitask(data_path, desc_path, batch_size,
         # Validate the model
         with torch.no_grad():
             # Test on training data
-            test_res = test_multitask(model=model, data=train_batches,
-                                      event_labels_dict=event_labels,
-                                      crit_labels_dict=crit_labels)
-            print("Event Type ", event_type)
-            print('⭑ Train Set ⭑')
-            print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
-            print(test_res.event.final_metrics)
-            print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
-            print(test_res.crit.final_metrics)
+            if verbose:
+                test_res = test_multitask(model=model, data=train_batches,
+                                          event_labels_dict=event_labels,
+                                          crit_labels_dict=crit_labels)
+                print("Event Type ", event_type)
+                print('⭑ Train Set ⭑')
+                print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
+                print(test_res.event.final_metrics)
+                print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
+                print(test_res.crit.final_metrics)
 
             # Test on validation data
             test_res = test_multitask(model=model, data=val_data,
                                       event_labels_dict=event_labels,
                                       crit_labels_dict=crit_labels)
-            print('⭑ Val Set ⭑')
-            print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
-            print(test_res.event.final_metrics)
-            print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
-            print(test_res.crit.final_metrics)
+            if verbose:
+                print('⭑ Val Set ⭑')
+                print(f"Event - Acc: {test_res.event.accuracy:05f}    F1: {test_res.event.f1:05f}    Loss: {total_loss}")
+                print(test_res.event.final_metrics)
+                print(f"Crit. - Acc: {test_res.crit.accuracy:05f}    F1: {test_res.crit.f1:05f}    Loss: {total_loss}")
+                print(test_res.crit.final_metrics)
 
             critical_f1 = test_res.crit.final_metrics['high'][2]
             if (critical_f1 < best.critical_f1) and early_stop:
@@ -153,11 +156,15 @@ def train_multitask(data_path, desc_path, batch_size,
                 best.class_metrics = test_res.crit.final_metrics
 
     print(f'{classifier_mode} {embedding_type}')
-    print(f'''Best model:
-    Epoch:   {best.epoch}
-    Acc:     {best.acc:04f}
-    F1:      {best.f1:04f}
-    Metrics: {best.class_metrics}''')
+    if best.epoch > 0:
+        print(f'''Best model:
+        Epoch:   {best.epoch}
+        Acc:     {best.acc:04f}
+        F1:      {best.f1:04f}
+        Metrics: {best.class_metrics}''')
+        print(f'{best.epoch} {best.acc} {best.f1} {best.class_metrics["low"][2]} {best.class_metrics["high"][2]}')
+    else:
+        print('No convergence')
 
     return model
 
@@ -166,7 +173,7 @@ def train_model(data_path, desc_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type,
                 num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
-                use_gpu):
+                use_gpu, verbose):
 
     print("Loading Data....")
     if desc_path is None:
@@ -197,8 +204,9 @@ def train_model(data_path, desc_path, batch_size,
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
-        print('')
-        print(f'======== Epoch Number: {epoch}')
+        if verbose:
+            print('')
+            print(f'======== Epoch Number: {epoch}')
         total_loss = 0.
         if embedding_type in ['bert', 'glove']:
             train_i = batchify(train, batch_size, classifier_mode, embedding_dim= embedding_dim)
@@ -216,16 +224,18 @@ def train_model(data_path, desc_path, batch_size,
 
         # Validate the model
         with torch.no_grad():
-            accuracy, f1, final_metrics = test_model(model, train_i, labels_dict)
-            print("Event Type ", event_type)
-            print(f"Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
-            print(final_metrics)
+            if verbose:
+                accuracy, f1, final_metrics = test_model(model, train_i, labels_dict)
+                print("Event Type ", event_type)
+                print(f"Train set - Acc: {accuracy:05f}    F1: {f1:05f}    Loss: {total_loss}")
+                print(final_metrics)
 
             accuracy, f1, final_metrics = test_model(model, val, labels_dict)
-            print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
-            print(final_metrics)
-            critical_f1 = final_metrics['high'][2]
+            if verbose:
+                print(f"Dev set - Acc: {accuracy:05f}    F1: {f1:05f}")
+                print(final_metrics)
 
+            critical_f1 = final_metrics['high'][2]
             if (critical_f1 < best.critical_f1) and early_stop:
                 print('Early convergence. Training stopped.')
                 break
@@ -237,11 +247,15 @@ def train_model(data_path, desc_path, batch_size,
                 best.class_metrics = final_metrics
 
     print(f'{classifier_mode} {embedding_type}')
-    print(f'''Best model:
-    Epoch:   {best.epoch}
-    Acc:     {best.acc:04f}
-    F1:      {best.f1:04f}
-    Metrics: {best.class_metrics}''')
+    if best.epoch > 0:
+        print(f'''Best model:
+        Epoch:   {best.epoch}
+        Acc:     {best.acc:04f}
+        F1:      {best.f1:04f}
+        Metrics: {best.class_metrics}''')
+        print(f'{best.epoch} {best.acc} {best.f1} {best.class_metrics["low"][2]} {best.class_metrics["high"][2]}')
+    else:
+        print('No convergence')
 
     return model
 
