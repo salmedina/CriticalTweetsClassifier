@@ -3,6 +3,9 @@ output/*.*
 
 data/glove.6B.100d.txt
 data/bert_embeddings.*
+data/bert_embeddings_earthquake.npy
 
 docs/
 src/__pycache__/
+
+.idea
