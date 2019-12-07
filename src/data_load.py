@@ -94,7 +94,7 @@ def loadEmbeddings(embedding_type='torch', embeddings_path=None):
             embeddings[word] = vector
         embeddings['UNK'] = len(vector)*[0.0]
     elif embedding_type == 'bert':
-        embeddings = np.load(embeddings_path).item()
+        embeddings = np.load(embeddings_path, allow_pickle=True).item()
 
     return embeddings
 
