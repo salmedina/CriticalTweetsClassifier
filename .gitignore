@@ -1,5 +1,8 @@
 # Ignore output
-./output/*
+output/*.*
 
-./data/glove.6B.100d.txt
-./data/bert_embeddings.*
+data/glove.6B.100d.txt
+data/bert_embeddings.*
+
+docs/
+src/__pycache__/
