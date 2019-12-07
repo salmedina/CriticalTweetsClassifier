@@ -1,0 +1,7 @@
+train:
+ - 2015_paris_attack
+ - 2018_fl_shooting
+ - 2013_West_Texas_explosion
+ - 2013_LA_airport_shootings
+valid:
+ - 2013_Boston_bombings

@@ -1,10 +1,10 @@
 train:
  - 2014_Philippines_Typhoon_Hagupit_en
-valid:
  - 2013_Alberta_floods
  - 2013_Queensland_floods
  - 2013_Typhoon_Yolanda
  - 2012_Philipinnes_floods
  - 2013_Manila_floods
- - 2012_Typhoon_Pablo
  - 2013_Colorado_floods
+valid:
+ - 2012_Typhoon_Pablo

@@ -1,0 +1,7 @@
+train:
+ - 2013_Alberta_floods
+ - 2013_Queensland_floods
+ - 2012_Philipinnes_floods
+ - 2013_Colorado_floods
+valid:
+ - 2013_Manila_floods
