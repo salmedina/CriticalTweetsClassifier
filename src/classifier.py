@@ -27,8 +27,9 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
         data = data + data[:batch_size-leftover]
         num_batches += 1
     for b in range(num_batches):
+        # seqlen set to maximum of batch
         batch = data[b*batch_size:(b+1)*batch_size]
-        batch = sorted(batch, key= maxCriterion, reverse=True)
+        batch = sorted(batch, key=maxCriterion, reverse=True)
         dim = batch[0][0].shape[0]
         real_lengths = [i[0].shape[0] for i in batch]
         if embedding_dim == 1:
@@ -59,7 +60,7 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
 
 def train_multitask(data_path, desc_path, batch_size,
                     hidden_dim, embedding_type,
-                    classifier_mode, event_type,
+                    classifier_mode, event_type, optimizer_type,
                     num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
                     use_gpu, verbose):
 
@@ -96,7 +97,13 @@ def train_multitask(data_path, desc_path, batch_size,
     if use_gpu:
         model = model.cuda()
 
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
+    if optimizer_type == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    elif optimizer_type == 'adamw':
+        optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
+
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):
@@ -171,7 +178,7 @@ def train_multitask(data_path, desc_path, batch_size,
 
 def train_model(data_path, desc_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
-                classifier_mode, event_type,
+                classifier_mode, event_type, optimizer_type,
                 num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
                 use_gpu, verbose):
 
@@ -200,8 +207,12 @@ def train_model(data_path, desc_path, batch_size,
     if use_gpu:
         model = model.cuda()
 
-    # optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    if optimizer_type == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    elif optimizer_type == 'adamw':
+        optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
     for epoch in range(epochs):

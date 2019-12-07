@@ -16,6 +16,8 @@ def parse_args():
     parser.add_argument('--num_layers', type=int, default=2, help='Number of hidden layers')
     parser.add_argument('--num_epochs', type=int, default=30, help='Number of epochs for training the model')
     parser.add_argument('--task', type=str, default='criticality', help='Classification task: {criticality, event_type, multitask, adversarial}')
+    parser.add_argument('--optimizer', type=str, default='adam',
+                        help='Optimizer to be used while training {sgd, adam, adamw}; Adam and AdamW only require lr')
     parser.add_argument('--early_stop', action='store_true', default=False, help='Enable/Disable early stopping based on F1')
     parser.add_argument('--data_path', type=str, default='../data/labeled_data.json', help='Path to the json file to use for classification')
     parser.add_argument('--exp_desc', type=str, default=None, help='Path to the experiment description yaml file')
@@ -38,6 +40,7 @@ def print_train_params(args):
     Mode:              {args.task}
     Num Layers:        {args.num_layers}
     Batch Size:        {args.batch_size}
+    Optimizer:         {args.optimizer}
     Early Stopping:    {args.early_stop}
     Exp. Descriptor:   {args.exp_desc}
     Use GPU:           {args.use_gpu}
@@ -59,13 +62,13 @@ def main(args):
         if args.task in ['multitask', 'adversarial']:
             train_multitask(args.data_path, args.exp_desc, args.batch_size,
                             args.hidden_dim, args.embedding_type,
-                            args.task, args.event_type,
+                            args.task, args.event_type, args.optimizer,
                             args.num_layers, args.num_epochs, lr, wd, m, args.early_stop,
                             args.use_gpu, args.mute)
         elif args.task in ['event_type', 'criticality']:
             train_model(args.data_path, args.exp_desc, args.batch_size,
                         args.embedding_dim, args.hidden_dim, args.embedding_type,
-                        args.task, args.event_type,
+                        args.task, args.event_type, args.optimizer,
                         args.num_layers, args.num_epochs, lr, wd, m, args.early_stop,
                         args.use_gpu, args.mute)
 
