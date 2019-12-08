@@ -16,6 +16,7 @@ pip install pytorch-revgrad
 pip install bert-embedding
 pip install pyyaml
 pip install pytorch-transformers
+pip install umap-learn
 ```
 
 ### Partial Results
