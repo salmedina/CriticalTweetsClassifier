@@ -311,7 +311,6 @@ def calc_metrics(scores, label_map):
 def test_model(model, data, labels_dict):
     correct = 0.0
     total = 0.0
-
     label_map = invert_dict(labels_dict)
     scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:

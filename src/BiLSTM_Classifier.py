@@ -22,16 +22,17 @@ class BiLSTMEventType(nn.Module):
             self.embeddings.load_state_dict({'weight': pretrained_embeds})
             if frozen:
                 self.embedding.weight.requires_grad = False
-        ###
-        self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first= True)
+        self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first= True,
+                            num_layers= self.number_layers, dropout= self.dropout)
+
         self.hidden2label = nn.Linear(hidden_dim*2, label_size)
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
         # first is the hidden h
         # second is the cell c
-        hidden1 = torch.randn(self.number_layers, self.batch_size, self.hidden_dim)
-        hidden2 = torch.randn(self.number_layers, self.batch_size, self.hidden_dim)
+        hidden1 = torch.randn(2*self.number_layers, self.batch_size, self.hidden_dim)
+        hidden2 = torch.randn(2*self.number_layers, self.batch_size, self.hidden_dim)
         if self.use_gpu:
             return (hidden1.cuda(), hidden2.cuda())
         return (hidden1, hidden2)
@@ -44,7 +45,10 @@ class BiLSTMEventType(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
+        ##Here get first and last state of LSTM (not only first) and concat them
         y = self.hidden2label(X[:, 0, :])
+        print("USing the Static embedding Model classifier")
+        pdb.set_trace()
         # probs = F.softmax(y, dim=1)
         log_probs = F.log_softmax(y, dim=1)
         return log_probs
