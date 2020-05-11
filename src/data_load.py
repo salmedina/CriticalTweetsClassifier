@@ -75,9 +75,7 @@ def encodeTweet(sentence, id, embeddings, vocab, embedding_type):
             vocab[word] = [len(vocab)]
         word_embed = vocab[word]
         x_vector.append(word_embed)
-
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
-
     return x_tensor
 
 
