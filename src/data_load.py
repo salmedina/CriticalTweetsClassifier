@@ -126,7 +126,8 @@ def loadData(embedding_type, event_type, data_path, data_type='labeled'):
 
     print("Loading embeddings...")
     embeddings_path = dict(glove='../data/glove.6B.100d.txt',
-                           bert='../data/bert_embeddings.npy')
+                           bert='../data/bert_embeddings.npy',
+                           torch= None)
     embeddings = loadEmbeddings(embedding_type=embedding_type,
                                 embeddings_path=embeddings_path[embedding_type])
 
@@ -160,7 +161,8 @@ def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'
     # TODO: add embeddings file to the script argument, cannot be hard coded at this level
     print("Loading embeddings...")
     embeddings_path = dict(glove='../data/glove.6B.100d.txt',
-                           bert='../data/bert_embeddings.npy')
+                           bert='../data/bert_embeddings.npy',
+                           torch=None)
     embeddings = loadEmbeddings(embedding_type=embedding_type,
                                 embeddings_path=embeddings_path[embedding_type])
 

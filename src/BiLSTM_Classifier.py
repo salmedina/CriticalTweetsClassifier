@@ -45,10 +45,17 @@ class BiLSTMEventType(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        ##Here get first and last state of LSTM (not only first) and concat them
-        y = self.hidden2label(X[:, 0, :])
-        print("USing the Static embedding Model classifier")
-        pdb.set_trace()
+
+        idx1 = torch.tensor([i - 1 for i in sentences_length])
+        X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
+        # Forward LSTM
+        x1 = X[torch.arange(X.shape[0]), idx1][:, 0, :]
+        # Backward LSTM
+        x2 = X[:, 0, 1, :]
+        X = torch.cat((x1, x2), dim=1)
+
+        y = self.hidden2label(X)
+
         # probs = F.softmax(y, dim=1)
         log_probs = F.log_softmax(y, dim=1)
         return log_probs
