@@ -1,6 +1,7 @@
 import random
 import torch
 import torch.optim as optim
+import numpy as np
 from BiLSTM_Classifier import BiLSTMEventType
 from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask, BiLSTM_BERT_Adversarial
 import torch.nn.functional as F
@@ -115,7 +116,7 @@ def train_multitask(data_path, desc_path, batch_size,
 
         for x, y_event, y_crit, seq_lengths in train_batches:
             model.zero_grad()
-            y_pred_event, y_pred_crit = model(x, seq_lengths)
+            y_pred_event, y_pred_crit, _ = model(x, seq_lengths)
             loss_event = model.loss(y_pred_event, y_event, seq_lengths, event_output_size)
             loss_crit = model.loss(y_pred_crit, y_crit, seq_lengths, crit_output_size)
             loss = loss_event + loss_crit
@@ -227,7 +228,7 @@ def train_model(data_path, desc_path, batch_size,
 
         for x, y, seq_lengths in train_i:
             model.zero_grad()
-            y_pred = model(x, seq_lengths)
+            y_pred, _ = model(x, seq_lengths)
             loss = model.loss(y_pred, y, seq_lengths)
             total_loss += loss.item()
             optimizer.zero_grad()
@@ -312,12 +313,17 @@ def test_model(model, data, labels_dict):
     correct = 0.0
     total = 0.0
 
+    all_pred, all_y = list(), list()
+    all_embeddings = list()
     label_map = invert_dict(labels_dict)
     scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
-        y_pred = model(x, seq_lengths)
+        y_pred, embeddings = model(x, seq_lengths)
         y_pred_value = torch.argmax(y_pred, 1)
+        all_pred += y_pred_value.tolist()
+        all_y += y.tolist()
+        all_embeddings.append(embeddings)
         diff_vector = y - y_pred_value
         correct += (diff_vector == 0).sum().item()
         for i in range(len(y)):
@@ -328,6 +334,7 @@ def test_model(model, data, labels_dict):
             if actual == pred:
                 scores[actual]['correct'] += 1
 
+    embeddings = np.concatenate(all_embeddings, axis=0)
     accuracy = correct / total
     macro_f1, final_metrics = calc_metrics(scores=scores, label_map=label_map)
 
@@ -344,15 +351,26 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
     scores_event = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map_event}
     scores_crit = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map_crit}
 
+    all_scores, all_pred, all_y = list(), list(), list()
+    all_embeddings = list()
     for x, y_event, y_crit, seq_lengths in data:
         total += len(y_event)
-        y_pred_event, y_pred_crit = model(x, seq_lengths)
+        y_pred_event, y_pred_crit, embeddings = model(x, seq_lengths)
+        all_scores.append(torch.exp(y_pred_crit).numpy())
+
+        #TODO: used for qualitative analysis, need to make it callable
+        y_pred_crit_value = torch.argmax(y_pred_crit, 1)
+        all_pred += y_pred_crit_value.tolist()
+        all_y += y_crit.tolist()
+        all_embeddings.append(embeddings)
 
         scores_event, correct_batch = update_pred_scores(y_event, y_pred_event, scores_event)
         correct.event += correct_batch
 
         scores_crit, correct_batch = update_pred_scores(y_crit, y_pred_crit, scores_crit)
         correct.crit += correct_batch
+
+    all_scores = np.concatenate(all_scores)
 
     accuracy_event = correct.event / total
     macro_f1_event, final_metrics_event = calc_metrics(scores=scores_event, label_map=label_map_event)

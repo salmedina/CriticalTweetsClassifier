@@ -35,9 +35,10 @@ class BiLSTM_BERT(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        y = self.hidden2label(X[:, 0, :])
+        embeddings = X[:, 0, :]
+        y = self.hidden2label(embeddings)
         log_probs = F.log_softmax(y, dim=1)
-        return log_probs
+        return log_probs, embeddings
 
     def loss(self, y_pred, y, sentences_length):
         y = y.view(-1)
@@ -133,15 +134,17 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
+        embeddings = X[:, 0, :]
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(X[:, 0, :])
-        y_crit = self.hidden2crit(X[:, 0, :])
+        y_event = self.hidden2event(embeddings)
+        y_crit = self.hidden2crit(embeddings)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
 
-        return log_probs_event, log_probs_crit
+        return log_probs_event, log_probs_crit, embeddings
+
 
     def loss(self, y_pred, y, sentences_length, output_size):
         y = y.view(-1)
@@ -188,15 +191,16 @@ class BiLSTM_BERT_Adversarial(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
+        embeddings = X[:, 0, :]
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(X[:, 0, :])
-        y_crit = self.hidden2crit(X[:, 0, :])
+        y_event = self.hidden2event(embeddings)
+        y_crit = self.hidden2crit(embeddings)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
 
-        return log_probs_event, log_probs_crit
+        return log_probs_event, log_probs_crit, embeddings
 
     def loss(self, y_pred, y, sentences_length, output_size):
         y = y.view(-1)
