@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from bert_embedding import BertEmbedding
 from data_load import loadData, loadExperimentData
 from easydict import EasyDict as edict
+import pdb
 
 random.seed(1107)
 torch.manual_seed(1107)
@@ -190,7 +191,6 @@ def train_model(data_path, desc_path, batch_size,
         train, val, events, vocab = loadExperimentData(desc_path=desc_path,
                                                        embedding_type=embedding_type,
                                                        data_path=data_path)
-
     if classifier_mode == 'criticality':
         labels_dict = {'low': 0, 'high': 1}
     else:

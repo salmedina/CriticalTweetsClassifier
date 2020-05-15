@@ -22,16 +22,17 @@ class BiLSTMEventType(nn.Module):
             self.embeddings.load_state_dict({'weight': pretrained_embeds})
             if frozen:
                 self.embedding.weight.requires_grad = False
-        ###
-        self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first= True)
+        self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first= True,
+                            num_layers= self.number_layers, dropout= self.dropout)
+
         self.hidden2label = nn.Linear(hidden_dim*2, label_size)
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
         # first is the hidden h
         # second is the cell c
-        hidden1 = torch.randn(self.number_layers, self.batch_size, self.hidden_dim)
-        hidden2 = torch.randn(self.number_layers, self.batch_size, self.hidden_dim)
+        hidden1 = torch.randn(2*self.number_layers, self.batch_size, self.hidden_dim)
+        hidden2 = torch.randn(2*self.number_layers, self.batch_size, self.hidden_dim)
         if self.use_gpu:
             return (hidden1.cuda(), hidden2.cuda())
         return (hidden1, hidden2)
@@ -44,7 +45,17 @@ class BiLSTMEventType(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        y = self.hidden2label(X[:, 0, :])
+
+        idx1 = torch.tensor([i - 1 for i in sentences_length])
+        X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
+        # Forward LSTM
+        x1 = X[torch.arange(X.shape[0]), idx1][:, 0, :]
+        # Backward LSTM
+        x2 = X[:, 0, 1, :]
+        X = torch.cat((x1, x2), dim=1)
+
+        y = self.hidden2label(X)
+
         # probs = F.softmax(y, dim=1)
         log_probs = F.log_softmax(y, dim=1)
         return log_probs
