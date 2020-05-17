@@ -9,3 +9,5 @@ docs/
 src/__pycache__/
 
 .idea
+
+*.pyc
