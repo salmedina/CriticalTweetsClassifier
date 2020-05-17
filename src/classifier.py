@@ -108,7 +108,7 @@ def train_multitask(data_path, desc_path, batch_size,
 
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         if verbose:
             print('')
             print(f'======== Epoch Number: {epoch}')
@@ -216,7 +216,7 @@ def train_model(data_path, desc_path, batch_size,
         optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         if verbose:
             print('')
             print(f'======== Epoch Number: {epoch}')
