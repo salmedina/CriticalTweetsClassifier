@@ -1,12 +1,14 @@
 import random
 import torch
 import torch.optim as optim
+import numpy as np
 from BiLSTM_Classifier import BiLSTMEventType
 from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask, BiLSTM_BERT_Adversarial
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
 from data_load import loadData, loadExperimentData
 from easydict import EasyDict as edict
+from tqdm import tqdm
 import pdb
 
 random.seed(1107)
@@ -62,7 +64,7 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
 def train_multitask(data_path, desc_path, batch_size,
                     hidden_dim, embedding_type,
                     classifier_mode, event_type, optimizer_type,
-                    num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
+                    num_layers, epochs, learning_rate, weight_decay, momentum, dropout, early_stop,
                     use_gpu, verbose):
 
     print("Loading Data....")
@@ -84,11 +86,11 @@ def train_multitask(data_path, desc_path, batch_size,
         if classifier_mode == 'multitask':
             model = BiLSTM_BERT_MultiTask(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
                                           event_output_size=event_output_size, crit_output_size=crit_output_size,
-                                          use_gpu=use_gpu, batch_size=batch_size)
+                                          use_gpu=use_gpu, batch_size=batch_size, dropout=dropout)
         elif classifier_mode == 'adversarial':
             model = BiLSTM_BERT_Adversarial(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
                                             event_output_size=event_output_size, crit_output_size=crit_output_size,
-                                            use_gpu=use_gpu, batch_size=batch_size)
+                                            use_gpu=use_gpu, batch_size=batch_size, dropout=dropout)
 
     else:
         #TODO: Implement multi-task learning for learning embeddings
@@ -107,7 +109,7 @@ def train_multitask(data_path, desc_path, batch_size,
 
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         if verbose:
             print('')
             print(f'======== Epoch Number: {epoch}')
@@ -116,7 +118,7 @@ def train_multitask(data_path, desc_path, batch_size,
 
         for x, y_event, y_crit, seq_lengths in train_batches:
             model.zero_grad()
-            y_pred_event, y_pred_crit = model(x, seq_lengths)
+            y_pred_event, y_pred_crit, _ = model(x, seq_lengths)
             loss_event = model.loss(y_pred_event, y_event, seq_lengths, event_output_size)
             loss_crit = model.loss(y_pred_crit, y_crit, seq_lengths, crit_output_size)
             loss = loss_event + loss_crit
@@ -180,7 +182,7 @@ def train_multitask(data_path, desc_path, batch_size,
 def train_model(data_path, desc_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type, optimizer_type,
-                num_layers, epochs, learning_rate, weight_decay, momentum, early_stop,
+                num_layers, epochs, learning_rate, weight_decay, momentum, dropout, early_stop,
                 use_gpu, verbose):
 
     print("Loading Data....")
@@ -199,10 +201,10 @@ def train_model(data_path, desc_path, batch_size,
     if embedding_type in ['bert', 'glove']:
         embedding_dim = train[0][0].shape[1]
         val = batchify(val, batch_size, classifier_mode, embedding_dim=embedding_dim, randomize=False)
-        model = BiLSTM_BERT(embedding_dim, hidden_dim, len(labels_dict), use_gpu, batch_size, num_layers)
+        model = BiLSTM_BERT(embedding_dim=embedding_dim, hidden_dim=hidden_dim, label_size=len(labels_dict), use_gpu=use_gpu, batch_size=batch_size, num_layers=num_layers, dropout=dropout)
     else:
         val = batchify(val, batch_size, classifier_mode, randomize=False)
-        model = BiLSTMEventType(embedding_dim, hidden_dim, len(vocab), len(labels_dict), use_gpu, batch_size, num_layers)
+        model = BiLSTMEventType(embedding_dim=embedding_dim, hidden_dim=hidden_dim, vocab_size=len(vocab), label_size=len(labels_dict), use_gpu=use_gpu, batch_size=batch_size, num_layers=num_layers, dropout=dropout)
 
     if use_gpu:
         model = model.cuda()
@@ -215,7 +217,7 @@ def train_model(data_path, desc_path, batch_size,
         optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
 
     best = edict(epoch=0, acc=0.0, f1=0.0, critical_f1=0.0, class_metrics=None)
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         if verbose:
             print('')
             print(f'======== Epoch Number: {epoch}')
@@ -227,7 +229,7 @@ def train_model(data_path, desc_path, batch_size,
 
         for x, y, seq_lengths in train_i:
             model.zero_grad()
-            y_pred = model(x, seq_lengths)
+            y_pred, _ = model(x, seq_lengths)
             loss = model.loss(y_pred, y, seq_lengths)
             total_loss += loss.item()
             optimizer.zero_grad()
@@ -311,12 +313,18 @@ def calc_metrics(scores, label_map):
 def test_model(model, data, labels_dict):
     correct = 0.0
     total = 0.0
+
+    all_pred, all_y = list(), list()
+    all_embeddings = list()
     label_map = invert_dict(labels_dict)
     scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
     for x, y, seq_lengths in data:
         total += len(y)
-        y_pred = model(x, seq_lengths)
+        y_pred, embeddings = model(x, seq_lengths)
         y_pred_value = torch.argmax(y_pred, 1)
+        all_pred += y_pred_value.tolist()
+        all_y += y.tolist()
+        all_embeddings.append(embeddings)
         diff_vector = y - y_pred_value
         correct += (diff_vector == 0).sum().item()
         for i in range(len(y)):
@@ -327,6 +335,7 @@ def test_model(model, data, labels_dict):
             if actual == pred:
                 scores[actual]['correct'] += 1
 
+    embeddings = np.concatenate(all_embeddings, axis=0)
     accuracy = correct / total
     macro_f1, final_metrics = calc_metrics(scores=scores, label_map=label_map)
 
@@ -343,15 +352,26 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
     scores_event = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map_event}
     scores_crit = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map_crit}
 
+    all_scores, all_pred, all_y = list(), list(), list()
+    all_embeddings = list()
     for x, y_event, y_crit, seq_lengths in data:
         total += len(y_event)
-        y_pred_event, y_pred_crit = model(x, seq_lengths)
+        y_pred_event, y_pred_crit, embeddings = model(x, seq_lengths)
+        all_scores.append(torch.exp(y_pred_crit).numpy())
+
+        #TODO: used for qualitative analysis, need to make it callable
+        y_pred_crit_value = torch.argmax(y_pred_crit, 1)
+        all_pred += y_pred_crit_value.tolist()
+        all_y += y_crit.tolist()
+        all_embeddings.append(embeddings)
 
         scores_event, correct_batch = update_pred_scores(y_event, y_pred_event, scores_event)
         correct.event += correct_batch
 
         scores_crit, correct_batch = update_pred_scores(y_crit, y_pred_crit, scores_crit)
         correct.crit += correct_batch
+
+    all_scores = np.concatenate(all_scores)
 
     accuracy_event = correct.event / total
     macro_f1_event, final_metrics_event = calc_metrics(scores=scores_event, label_map=label_map_event)

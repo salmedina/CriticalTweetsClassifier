@@ -5,14 +5,14 @@ import torch.nn.functional as F
 
 class BiLSTMEventType(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, label_size, use_gpu, batch_size, number_layers, pretrained_embeds= None,
+    def __init__(self, embedding_dim, hidden_dim, vocab_size, label_size, use_gpu, batch_size, num_layers, pretrained_embeds= None,
                  frozen= False, dropout=0.5):
         super(BiLSTMEventType, self).__init__()
         self.hidden_dim = hidden_dim
         self.use_gpu = use_gpu
         self.batch_size = batch_size
         self.dropout = dropout
-        self.number_layers= number_layers
+        self.number_layers= num_layers
         self.label_size= label_size
         self.embeddings = nn.Embedding(vocab_size, embedding_dim)
         ####

@@ -6,13 +6,13 @@ from revgrad import RevGrad
 
 class BiLSTM_BERT(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, label_size, use_gpu, batch_size, number_layers, dropout=0.5):
+    def __init__(self, embedding_dim, hidden_dim, label_size, use_gpu, batch_size, num_layers, dropout=0.5):
         super(BiLSTM_BERT, self).__init__()
         self.hidden_dim = hidden_dim
         self.use_gpu = use_gpu
         self.batch_size = batch_size
         self.dropout = dropout
-        self.number_layers = number_layers
+        self.number_layers = num_layers
         self.label_size = label_size
         self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim, bidirectional=True, batch_first=True,
                             num_layers= self.number_layers, dropout= self.dropout)
@@ -47,7 +47,7 @@ class BiLSTM_BERT(nn.Module):
         y = self.hidden2label(X)
 
         log_probs = F.log_softmax(y, dim=1)
-        return log_probs
+        return log_probs, X
 
     def loss(self, y_pred, y, sentences_length):
         y = y.view(-1)
@@ -155,6 +155,7 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
+        embeddings = X[:, 0, :]
 
         idx1 = torch.tensor([i - 1 for i in sentences_length])
         X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
@@ -166,13 +167,14 @@ class BiLSTM_BERT_MultiTask(nn.Module):
 
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(X[:, 0, :])
-        y_crit = self.hidden2crit(X[:, 0, :])
+        y_event = self.hidden2event(embeddings)
+        y_crit = self.hidden2crit(embeddings)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
 
-        return log_probs_event, log_probs_crit
+        return log_probs_event, log_probs_crit, embeddings
+
 
     def loss(self, y_pred, y, sentences_length, output_size):
         y = y.view(-1)
@@ -220,6 +222,7 @@ class BiLSTM_BERT_Adversarial(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
+        embeddings = X[:, 0, :]
 
         idx1 = torch.tensor([i - 1 for i in sentences_length])
         X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
@@ -230,13 +233,13 @@ class BiLSTM_BERT_Adversarial(nn.Module):
         X= torch.cat((x1, x2), dim=1)
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(X[:, 0, :])
-        y_crit = self.hidden2crit(X[:, 0, :])
+        y_event = self.hidden2event(embeddings)
+        y_crit = self.hidden2crit(embeddings)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
 
-        return log_probs_event, log_probs_crit
+        return log_probs_event, log_probs_crit, embeddings
 
     def loss(self, y_pred, y, sentences_length, output_size):
         y = y.view(-1)
