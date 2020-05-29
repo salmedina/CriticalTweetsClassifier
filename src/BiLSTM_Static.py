@@ -155,7 +155,6 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        embeddings = X[:, 0, :]
 
         idx1 = torch.tensor([i - 1 for i in sentences_length])
         X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
@@ -163,12 +162,11 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         x1 = X[torch.arange(X.shape[0]), idx1][:, 0, :]
         #Backward LSTM
         x2 = X[:, 0, 1, :]
-        X= torch.cat((x1, x2), dim=1)
-
+        embedddings = torch.cat((x1, x2), dim=1)
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(embeddings)
-        y_crit = self.hidden2crit(embeddings)
+        y_event = self.hidden2event(embedddings)
+        y_crit = self.hidden2crit(embedddings)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
@@ -222,7 +220,6 @@ class BiLSTM_BERT_Adversarial(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        embeddings = X[:, 0, :]
 
         idx1 = torch.tensor([i - 1 for i in sentences_length])
         X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
@@ -230,7 +227,7 @@ class BiLSTM_BERT_Adversarial(nn.Module):
         x1 = X[torch.arange(X.shape[0]), idx1][:, 0, :]
         #Backward LSTM
         x2 = X[:, 0, 1, :]
-        X= torch.cat((x1, x2), dim=1)
+        embeddings = torch.cat((x1, x2), dim=1)
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
         y_event = self.hidden2event(embeddings)
