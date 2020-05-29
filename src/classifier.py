@@ -65,7 +65,7 @@ def train_multitask(data_path, desc_path, batch_size,
                     hidden_dim, embedding_type,
                     classifier_mode, event_type, optimizer_type,
                     num_layers, epochs, learning_rate, weight_decay, momentum, dropout, early_stop,
-                    use_gpu, verbose):
+                    use_gpu, verbose, output_path):
 
     print("Loading Data....")
     if desc_path is None:
@@ -164,6 +164,17 @@ def train_multitask(data_path, desc_path, batch_size,
                 best.f1 = test_res.crit.f1
                 best.critical_f1 = test_res.crit.final_metrics['high'][2]
                 best.class_metrics = test_res.crit.final_metrics
+                torch.save(dict(mode='multitask', 
+                                model_state_dict=model.state_dict(),
+                                ctor_params=dict(embedding_dim=embedding_dim, 
+                                                hidden_dim=hidden_dim, 
+                                                num_layers=num_layers,
+                                                event_output_size=event_output_size, 
+                                                crit_output_size=crit_output_size,
+                                                use_gpu=use_gpu, 
+                                                batch_size=batch_size, 
+                                                dropout=dropout)),
+                            output_path)
 
     print(f'{classifier_mode} {embedding_type}')
     if best.epoch > 0:
@@ -183,7 +194,7 @@ def train_model(data_path, desc_path, batch_size,
                 embedding_dim, hidden_dim, embedding_type,
                 classifier_mode, event_type, optimizer_type,
                 num_layers, epochs, learning_rate, weight_decay, momentum, dropout, early_stop,
-                use_gpu, verbose):
+                use_gpu, verbose, output_path):
 
     print("Loading Data....")
     if desc_path is None:
@@ -260,6 +271,16 @@ def train_model(data_path, desc_path, batch_size,
                 best.f1 = f1
                 best.critical_f1 = critical_f1
                 best.class_metrics = final_metrics
+                torch.save(dict(mode='simple', 
+                                model_state_dict=model.state_dict(),
+                                ctor_params=dict(embedding_dim=embedding_dim, 
+                                                hidden_dim=hidden_dim, 
+                                                label_size=len(labels_dict), 
+                                                use_gpu=use_gpu, 
+                                                batch_size=batch_size, 
+                                                num_layers=num_layers, 
+                                                dropout=dropout)),
+                            output_path)
 
     print(f'{classifier_mode} {embedding_type}')
     if best.epoch > 0:
@@ -381,3 +402,29 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
 
     return edict(event=edict(accuracy=accuracy_event, f1=macro_f1_event, final_metrics=final_metrics_event),
                  crit=edict(accuracy=accuracy_crit, f1=macro_f1_crit, final_metrics=final_metrics_crit))
+
+def load_model(model_path):
+    ckpt = torch.load(model_path)
+    params = edict(ckpt['ctor_params'])
+    if ckpt['mode'] == 'simple':
+        model = BiLSTM_BERT(embedding_dim=params.embedding_dim, 
+                            hidden_dim=params.hidden_dim, 
+                            label_size=params.label_size, 
+                            use_gpu=params.use_gpu, 
+                            batch_size=params.batch_size, 
+                            num_layers=params.num_layers, 
+                            dropout=params.dropout)
+    elif ckpt['mode'] == 'multitask':
+        model = BiLSTM_BERT(embedding_dim=params.embedding_dim, 
+                            hidden_dim=params.hidden_dim, 
+                            num_layers=params.num_layers,
+                            event_output_size=params.event_output_size, 
+                            crit_output_size=params.crit_output_size,
+                            use_gpu=params.use_gpu, 
+                            batch_size=params.batch_size, 
+                            dropout=params.dropout)
+    
+    model.load_state_dict(ckpt['model_state_dict'])
+
+    return model
+
