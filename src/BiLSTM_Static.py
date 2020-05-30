@@ -26,7 +26,6 @@ class BiLSTM_BERT(nn.Module):
         hidden2 = torch.randn(2*self.number_layers, self.batch_size, self.hidden_dim)
         if self.use_gpu:
             return hidden1.cuda(), hidden2.cuda()
-
         return hidden1, hidden2
 
     def forward(self, encoded_sentence, sentences_length):
@@ -105,7 +104,7 @@ class BiLSTM_BERT_Attention(nn.Module):
         x2 = Xsummary[:, 0, 1, :]
         Xsummary= torch.cat((x1, x2), dim=1)
 
-        y = self.hidden2label(Xsummary[:, 0, :])
+        y = self.hidden2label(Xsummary)
         log_probs= F.log_softmax(y, dim=1)
         return log_probs
 
@@ -155,7 +154,7 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         lstm_out, self.hidden = self.lstm(embed_pack_pad, self.hidden)
         X, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_out, batch_first=True)
         X = X.contiguous()
-        embeddings = X[:, 0, :]
+        #embeddings = X[:, 0, :]
 
         idx1 = torch.tensor([i - 1 for i in sentences_length])
         X = X.view(self.batch_size, sentences_length[0], 2, self.hidden_dim)
@@ -164,7 +163,7 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         #Backward LSTM
         x2 = X[:, 0, 1, :]
         X= torch.cat((x1, x2), dim=1)
-
+        embeddings = X
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
         y_event = self.hidden2event(embeddings)
@@ -232,6 +231,7 @@ class BiLSTM_BERT_Adversarial(nn.Module):
         x2 = X[:, 0, 1, :]
         X= torch.cat((x1, x2), dim=1)
 
+        embeddings = X
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
         y_event = self.hidden2event(embeddings)
         y_crit = self.hidden2crit(embeddings)
@@ -294,8 +294,8 @@ class BiLSTM_BERT_Adversarial_Attention(nn.Module):
         X= torch.cat((x1, x2), dim=1)
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(X[:, 0, :])
-        y_crit = self.hidden2crit(X[:, 0, :])
+        y_event = self.hidden2event(X)
+        y_crit = self.hidden2crit(X)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)

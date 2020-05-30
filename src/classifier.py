@@ -2,7 +2,7 @@ import random
 import torch
 import torch.optim as optim
 import numpy as np
-from BiLSTM_Classifier import BiLSTMEventType
+from BiLSTM_Classifier import BiLSTM_Baseline
 from BiLSTM_Static import BiLSTM_BERT, BiLSTM_BERT_MultiTask, BiLSTM_BERT_Adversarial
 import torch.nn.functional as F
 from bert_embedding import BertEmbedding
@@ -31,6 +31,7 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
         num_batches += 1
     for b in range(num_batches):
         # seqlen set to maximum of batch
+        sentences=[]
         batch = data[b*batch_size:(b+1)*batch_size]
         batch = sorted(batch, key=maxCriterion, reverse=True)
         dim = batch[0][0].shape[0]
@@ -43,18 +44,18 @@ def batchify(data, batch_size, classifier_mode, embedding_dim=1, randomize=True)
         y_event_tensor = torch.zeros((batch_size), dtype=torch.long)
         y_crit_tensor = torch.zeros((batch_size), dtype=torch.long)
         for i in range(batch_size):
-            x_i, y_i, y_cr = batch[i]
+            x_i, y_i, y_cr, text = batch[i]
             x_i = F.pad(x_i, (0, 0, 0, dim-x_i.shape[0]))
             x_tensor[i] = x_i
             y_event_tensor[i] = y_i
             y_crit_tensor[i] = y_cr
-
+            sentences.append(text)
         if classifier_mode == 'event_type':
-            batches.append((x_tensor, y_event_tensor, real_lengths))
+            batches.append((x_tensor, y_event_tensor, real_lengths, sentences))
         elif classifier_mode == 'criticality':
-            batches.append((x_tensor, y_crit_tensor, real_lengths))
+            batches.append((x_tensor, y_crit_tensor, real_lengths, sentences))
         elif classifier_mode in ['multitask', 'adversarial']:
-            batches.append((x_tensor, y_event_tensor, y_crit_tensor, real_lengths))
+            batches.append((x_tensor, y_event_tensor, y_crit_tensor, real_lengths, sentences))
         else:
             batches = None
 
@@ -116,7 +117,7 @@ def train_multitask(data_path, desc_path, batch_size,
         total_loss = 0.
         train_batches = batchify(train_data, batch_size, 'multitask', embedding_dim=embedding_dim)
 
-        for x, y_event, y_crit, seq_lengths in train_batches:
+        for x, y_event, y_crit, seq_lengths, sentences in train_batches:
             model.zero_grad()
             y_pred_event, y_pred_crit, _ = model(x, seq_lengths)
             loss_event = model.loss(y_pred_event, y_event, seq_lengths, event_output_size)
@@ -204,7 +205,7 @@ def train_model(data_path, desc_path, batch_size,
         model = BiLSTM_BERT(embedding_dim=embedding_dim, hidden_dim=hidden_dim, label_size=len(labels_dict), use_gpu=use_gpu, batch_size=batch_size, num_layers=num_layers, dropout=dropout)
     else:
         val = batchify(val, batch_size, classifier_mode, randomize=False)
-        model = BiLSTMEventType(embedding_dim=embedding_dim, hidden_dim=hidden_dim, vocab_size=len(vocab), label_size=len(labels_dict), use_gpu=use_gpu, batch_size=batch_size, num_layers=num_layers, dropout=dropout)
+        model = BiLSTM_Baseline(embedding_dim=embedding_dim, hidden_dim=hidden_dim, vocab_size=len(vocab), label_size=len(labels_dict), use_gpu=use_gpu, batch_size=batch_size, num_layers=num_layers, dropout=dropout)
 
     if use_gpu:
         model = model.cuda()
@@ -227,12 +228,12 @@ def train_model(data_path, desc_path, batch_size,
         else:
             train_i = batchify(train, batch_size, classifier_mode)
 
-        for x, y, seq_lengths in train_i:
+        for x, y, seq_lengths, sentences in train_i:
             model.zero_grad()
             y_pred, _ = model(x, seq_lengths)
             loss = model.loss(y_pred, y, seq_lengths)
             total_loss += loss.item()
-            optimizer.zero_grad()
+            # optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             del loss
@@ -318,7 +319,7 @@ def test_model(model, data, labels_dict):
     all_embeddings = list()
     label_map = invert_dict(labels_dict)
     scores = {label_idx: {'correct': 0.0, 'gold': 0.0001, 'predicted': 0.0001} for label_idx in label_map}
-    for x, y, seq_lengths in data:
+    for x, y, seq_lengths, sentences in data:
         total += len(y)
         y_pred, embeddings = model(x, seq_lengths)
         y_pred_value = torch.argmax(y_pred, 1)
@@ -354,7 +355,7 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
 
     all_scores, all_pred, all_y = list(), list(), list()
     all_embeddings = list()
-    for x, y_event, y_crit, seq_lengths in data:
+    for x, y_event, y_crit, seq_lengths, sentences in data:
         total += len(y_event)
         y_pred_event, y_pred_crit, embeddings = model(x, seq_lengths)
         all_scores.append(torch.exp(y_pred_crit).numpy())
