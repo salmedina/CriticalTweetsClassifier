@@ -78,8 +78,14 @@ def encodeTweet(sentence, id, embeddings, vocab, embedding_type):
     x_tensor = torch.tensor(x_vector, dtype=torch.long)
     return x_tensor
 
+def embeds2numpy(vocab, embeddings, embedding_dim):
+    pretrained_embeds= np.zeros((len(vocab), embedding_dim))
+    for i in range(len(vocab)):
+        pretrained_embeds[i]= embeddings[vocab[i]]
+    return pretrained_embeds
 
-def loadEmbeddings(embedding_type='torch', embeddings_path=None):
+
+def loadEmbeddings(embeddings_path, embedding_type='torch'):
     embeddings = {}
     if embedding_type == 'glove':
         f = open(embeddings_path)
@@ -93,7 +99,6 @@ def loadEmbeddings(embedding_type='torch', embeddings_path=None):
         embeddings['UNK'] = len(vector)*[0.0]
     elif embedding_type == 'bert':
         embeddings = np.load(embeddings_path, allow_pickle=True).item()
-
     return embeddings
 
 
@@ -128,8 +133,7 @@ def loadData(embedding_type, event_type, data_path, data_type='labeled'):
     embeddings_path = dict(glove='../data/glove.6B.100d.txt',
                            bert='../data/bert_embeddings.npy',
                            torch= None)
-    embeddings = loadEmbeddings(embedding_type=embedding_type,
-                                embeddings_path=embeddings_path[embedding_type])
+    embeddings = loadEmbeddings(embeddings_path[embedding_type], embedding_type=embedding_type)
 
     train = list()
     val = list()
@@ -138,9 +142,9 @@ def loadData(embedding_type, event_type, data_path, data_type='labeled'):
             x_i = encodeTweet(X[i], ids[i], embeddings, vocab, embedding_type)
             y_i = torch.tensor(Y_event[i], dtype=torch.long)
             if i < split:
-                train.append((x_i, y_i, Y_cr[i]))
+                train.append((x_i, y_i, Y_cr[i], X[i]))
             else:
-                val.append((x_i, y_i, Y_cr[i]))
+                val.append((x_i, y_i, Y_cr[i], X[i]))
 
     return train, val, events, vocab
 
@@ -163,8 +167,7 @@ def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'
     embeddings_path = dict(glove='../data/glove.6B.100d.txt',
                            bert='../data/bert_embeddings.npy',
                            torch=None)
-    embeddings = loadEmbeddings(embedding_type=embedding_type,
-                                embeddings_path=embeddings_path[embedding_type])
+    embeddings = loadEmbeddings(embeddings_path[embedding_type], embedding_type=embedding_type)
 
     # Load data into structures
     vocab = {'<PAD>': 0}
@@ -181,11 +184,11 @@ def loadExperimentData(desc_path, embedding_type, data_path, data_type='labeled'
         y_cr = 0 if data[id]['label'] == 'low' else 1
         if event in experiment_split.train:
             y_event = torch.tensor(events_idx[event], dtype=torch.long)
-            train.append((x, y_event, y_cr))
+            train.append((x, y_event, y_cr, data[id]['text']))
         elif event in experiment_split.valid:
             # y_event is irrelevant for validation since we focus on criticality
             y_event = torch.tensor(0, dtype=torch.long)
-            val.append((x, y_event, y_cr))
+            val.append((x, y_event, y_cr, data[id]['text']))
 
     # Shuffle the samples and split them into train and val
     random.shuffle(train)
