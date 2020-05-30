@@ -91,6 +91,9 @@ def train_multitask(data_path, desc_path, batch_size,
             model = BiLSTM_BERT_Adversarial(embedding_dim=embedding_dim, hidden_dim=hidden_dim, num_layers=num_layers,
                                             event_output_size=event_output_size, crit_output_size=crit_output_size,
                                             use_gpu=use_gpu, batch_size=batch_size, dropout=dropout)
+        else:
+            model = None
+            print('Unknown classifier mode')
 
     else:
         #TODO: Implement multi-task learning for learning embeddings
@@ -164,8 +167,10 @@ def train_multitask(data_path, desc_path, batch_size,
                 best.f1 = test_res.crit.f1
                 best.critical_f1 = test_res.crit.final_metrics['high'][2]
                 best.class_metrics = test_res.crit.final_metrics
-                torch.save(dict(mode='multitask', 
+                torch.save(dict(mode=classifier_mode, 
                                 model_state_dict=model.state_dict(),
+                                optimizer_state_dict=optimizer.state_dict(),
+                                optimizer_params=dict(),
                                 ctor_params=dict(embedding_dim=embedding_dim, 
                                                 hidden_dim=hidden_dim, 
                                                 num_layers=num_layers,
@@ -271,8 +276,9 @@ def train_model(data_path, desc_path, batch_size,
                 best.f1 = f1
                 best.critical_f1 = critical_f1
                 best.class_metrics = final_metrics
-                torch.save(dict(mode='simple', 
+                torch.save(dict(mode='baseline', 
                                 model_state_dict=model.state_dict(),
+                                optimizer_state_dict=optimizer.state_dict(),
                                 ctor_params=dict(embedding_dim=embedding_dim, 
                                                 hidden_dim=hidden_dim, 
                                                 label_size=len(labels_dict), 
@@ -406,7 +412,7 @@ def test_multitask(model, data, event_labels_dict, crit_labels_dict):
 def load_model(model_path):
     ckpt = torch.load(model_path)
     params = edict(ckpt['ctor_params'])
-    if ckpt['mode'] == 'simple':
+    if ckpt['mode'] == 'baseline':
         model = BiLSTM_BERT(embedding_dim=params.embedding_dim, 
                             hidden_dim=params.hidden_dim, 
                             label_size=params.label_size, 
@@ -415,7 +421,7 @@ def load_model(model_path):
                             num_layers=params.num_layers, 
                             dropout=params.dropout)
     elif ckpt['mode'] == 'multitask':
-        model = BiLSTM_BERT(embedding_dim=params.embedding_dim, 
+        model = BiLSTM_BERT_MultiTask(embedding_dim=params.embedding_dim, 
                             hidden_dim=params.hidden_dim, 
                             num_layers=params.num_layers,
                             event_output_size=params.event_output_size, 
@@ -423,6 +429,17 @@ def load_model(model_path):
                             use_gpu=params.use_gpu, 
                             batch_size=params.batch_size, 
                             dropout=params.dropout)
+    elif ckpt['mode'] == 'adversarial':
+        model = BiLSTM_BERT_Adversarial(embedding_dim=params.embedding_dim, 
+                            hidden_dim=params.hidden_dim, 
+                            num_layers=params.num_layers,
+                            event_output_size=params.event_output_size, 
+                            crit_output_size=params.crit_output_size,
+                            use_gpu=params.use_gpu, 
+                            batch_size=params.batch_size, 
+                            dropout=params.dropout)
+    else:
+        model = None
     
     model.load_state_dict(ckpt['model_state_dict'])
 
