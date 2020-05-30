@@ -197,7 +197,8 @@ class BiLSTM_BERT_Adversarial(nn.Module):
                             num_layers= self.number_layers, dropout= self.dropout)
         self.hidden2crit = nn.Linear(hidden_dim * 2, crit_output_size)
         self.hidden2event = nn.Sequential(RevGrad(scale=adv_scale),
-                                          nn.Linear(hidden_dim * 2, event_output_size))
+                                          nn.Linear(hidden_dim * 2, 
+                                          event_output_size))
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
