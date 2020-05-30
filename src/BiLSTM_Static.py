@@ -186,7 +186,7 @@ class BiLSTM_BERT_MultiTask(nn.Module):
 
 class BiLSTM_BERT_Adversarial(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, num_layers, event_output_size, crit_output_size, use_gpu, batch_size, adv_scale=100.0, dropout=0.5):
+    def __init__(self, embedding_dim, hidden_dim, num_layers, event_output_size, crit_output_size, use_gpu, batch_size, adv_scale=1.0, dropout=0.5):
         super(BiLSTM_BERT_Adversarial, self).__init__()
         self.hidden_dim = hidden_dim
         self.use_gpu = use_gpu
