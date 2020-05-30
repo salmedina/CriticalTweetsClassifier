@@ -162,11 +162,11 @@ class BiLSTM_BERT_MultiTask(nn.Module):
         x1 = X[torch.arange(X.shape[0]), idx1][:, 0, :]
         #Backward LSTM
         x2 = X[:, 0, 1, :]
-        embedddings = torch.cat((x1, x2), dim=1)
+        embeddings = torch.cat((x1, x2), dim=1)
 
         #Change which state is fed in the fully connected. Now it is the first one, last time was the last one
-        y_event = self.hidden2event(embedddings)
-        y_crit = self.hidden2crit(embedddings)
+        y_event = self.hidden2event(embeddings)
+        y_crit = self.hidden2crit(embeddings)
 
         log_probs_event = F.log_softmax(y_event, dim=1)
         log_probs_crit = F.log_softmax(y_crit, dim=1)
