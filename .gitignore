@@ -1,5 +1,6 @@
 # Ignore output
-output/*.*
+output/
+images/
 
 data/glove.6B.100d.txt
 data/bert_embeddings.*
