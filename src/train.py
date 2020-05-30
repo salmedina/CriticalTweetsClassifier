@@ -51,6 +51,7 @@ def print_train_params(args):
     Early Stopping:    {args.early_stop}
     Exp. Descriptor:   {args.exp_desc}
     Use GPU:           {args.use_gpu}
+    Output Path:       {args.output_path}
 ==============================================================''')
 
 
@@ -65,13 +66,13 @@ def main(args):
                         args.hidden_dim, args.embedding_type,
                         args.task, args.event_type, args.optimizer,
                         args.num_layers, args.num_epochs, args.lr, args.wd, args.momentum, args.dropout, args.early_stop,
-                        args.use_gpu, args.mute)
+                        args.use_gpu, args.mute, args.output_path)
     elif args.task in ['event_type', 'criticality']:
         train_model(args.data_path, args.exp_desc, args.batch_size,
                     args.embedding_dim, args.hidden_dim, args.embedding_type,
                     args.task, args.event_type, args.optimizer,
                     args.num_layers, args.num_epochs, args.lr, args.wd, args.momentum, args.dropout, args.early_stop,
-                    args.use_gpu, args.mute)
+                    args.use_gpu, args.mute, args.output_path)
     else:
         print('Unknown task.')
 
