@@ -12,15 +12,21 @@ do
     DESCRIPTOR_PATH="../data/experiments/${EVENT}_${i}.yaml"
 
     # Baseline GLOVE
-    python3 -u train.py --task=criticality --embedding_type=glove --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --mute
+    OUTPUT_PATH="../output/models/${EVENT}_${i}_base_glove.pth"
+    python3 -u train.py --task=criticality --embedding_type=glove --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --output_path=$OUTPUT_PATH --mute
     # Baseline BERT
-    python3 -u train.py --task=criticality --embedding_type=bert --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --mute
+    OUTPUT_PATH="../output/models/${EVENT}_${i}_base_bert.pth"
+    python3 -u train.py --task=criticality --embedding_type=bert --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --output_path=$OUTPUT_PATH --mute
     # MULTITASK GLOVE
-    python3 -u train.py --task=multitask --embedding_type=glove --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --mute
+    OUTPUT_PATH="../output/models/${EVENT}_${i}_mt_glove.pth"
+    python3 -u train.py --task=multitask --embedding_type=glove --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --output_path=$OUTPUT_PATH --mute
     # MULTITASK BERT
-    python3 -u train.py --task=multitask --embedding_type=bert --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --mute
+    OUTPUT_PATH="../output/models/${EVENT}_${i}_mt_bert.pth"
+    python3 -u train.py --task=multitask --embedding_type=bert --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --output_path=$OUTPUT_PATH --mute
     # ADVERSARIAL GLOVE
-    python3 -u train.py --task=adversarial --embedding_type=glove --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --mute
+    OUTPUT_PATH="../output/models/${EVENT}_${i}_adv_glove.pth"
+    python3 -u train.py --task=adversarial --embedding_type=glove --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --output_path=$OUTPUT_PATH --mute
     # ADVERSARIAL BERT
-    python3 -u train.py --task=adversarial --embedding_type=bert --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --mute
+    OUTPUT_PATH="../output/models/${EVENT}_${i}_adv_bert.pth"
+    python3 -u train.py --task=adversarial --embedding_type=bert --num_epochs=40 --exp_desc=$DESCRIPTOR_PATH --lr=$LEARNING_RATE --wd=$WEIGHT_DECAY --momentum=$MOMENTUM --dropout=$DROPOUT --output_path=$OUTPUT_PATH --mute
 done
