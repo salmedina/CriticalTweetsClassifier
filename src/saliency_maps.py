@@ -81,12 +81,11 @@ def get_embedding_activations(baseline_path, adv_path, data_path, desc_path, bat
 
 
 
+if __name__ == '__main__':
 
+    desc_path='../data/labeled_data.json'
+    embedding_type= 'glove'
+    data_path= '../data/experiments/earthquake_2.yaml'
 
-desc_path='../data/labeled_data.json'
-embedding_type= 'glove'
-data_path= '../data/experiments/earthquake_2.yaml'
-
-
-get_embedding_activations('../models/earthquake_2_base_glove.pth', '../models/earthquake_2_adv_glove.pth', desc_path, data_path, 16,
-                    'glove')
+    get_embedding_activations('../models/earthquake_2_base_glove.pth', '../models/earthquake_2_adv_glove.pth', desc_path, data_path, 16,
+                        'glove')
