@@ -85,8 +85,8 @@ def get_embedding_activations(baseline_path, adv_path, data_path, desc_path, bat
 
 desc_path='../data/labeled_data.json'
 embedding_type= 'glove'
-data_path= '../data/experiments/flood_only_1.yaml'
+data_path= '../data/experiments/earthquake_2.yaml'
 
 
-get_embedding_activations('../models/flood_1_base_glove.pth', '../models/flood_1_adv_glove.pth', desc_path, data_path, 16,
+get_embedding_activations('../models/earthquake_2_base_glove.pth', '../models/earthquake_2_adv_glove.pth', desc_path, data_path, 16,
                     'glove')
